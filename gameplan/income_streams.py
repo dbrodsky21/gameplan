@@ -4,9 +4,6 @@ import numpy as np
 import gameplan.helpers as hp
 
 
-FREQ_MAP = {
-    'Y': pd.DateOffset(years=1),
-}
 class IncomeStream():
     def __init__(self, income_type, amount, freq, first_pmt_dt,
                  last_pmt_dt=None):
@@ -23,7 +20,7 @@ class IncomeStream():
     def cash_flows(self):
         """A pandas dataframe representing the cashflows from the income stream.
         """
-        freq = FREQ_MAP.get(self.freq, self.freq)
+        freq = hp.FREQ_MAP.get(self.freq, self.freq)
         date_range = pd.date_range(
             start=self.first_pmt_dt,
             end=self.last_pmt_dt,
