@@ -4,16 +4,6 @@ import numpy as np
 import gameplan.helpers as hp
 
 
-"""
-General Expense Module
-What’s the expense?
-_______
-How much is it? ______
-What type of expense is it?
-One-time
-Recurring
-When?
-"""
 class Expense():
     def __init__(self, expense_type, amount, recurring, start_dt, freq=None,
                  end_dt=None):
@@ -45,7 +35,7 @@ class Expense():
         cash_flows = pd.DataFrame(
             index=date_range,
             data=[-self.amount] * len(date_range), # Note the negative sign
-            columns=[self.income_type]
+            columns=[self.expense_type]
         )
 
         return cash_flows
