@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+import gameplan.helpers as hp
+
+
 FREQ_MAP = {
     'Y': pd.DateOffset(years=1),
 }
@@ -55,22 +58,29 @@ class IncomeStream():
 
 
 class Salary(IncomeStream):
-    def __init__(self, paycheck_amt, payday_freq,
-                 next_paycheck_dt=pd.datetime.today(),
+    def __init__(self, paycheck_amt, payday_freq, next_paycheck_dt=None,
                  last_paycheck_dt=None):
+
+        first_pmt_dt = (
+            next_paycheck_dt if next_paycheck_dt
+            else hp.get_next_date_offset(payday_freq)
+        )
+        # TO DO: add validation that first/last dts aren't conflicting
+        last_pmt_dt = (
+            last_paycheck_dt if last_paycheck_dt
+            else first_pmt_dt + pd.DateOffset(years=1)
+        )
+
         super().__init__(
             income_type='salary',
             amount=paycheck_amt,
             freq=payday_freq,
-            first_pmt_dt=next_paycheck_dt,
-            last_pmt_dt=(
-                last_paycheck_dt if last_paycheck_dt
-                else next_paycheck_dt + pd.DateOffset(years=1)
-                )
+            first_pmt_dt=first_pmt_dt,
+            last_pmt_dt=last_pmt_dt
         )
 
 
     @property
     def annualized_salary(self):
         """TO DO: refactor"""
-        return self.cash_flows.resample(freq='365D').sum().values[0][0]
+        return self.cash_flows.resample('365D').sum().values[0][0]
