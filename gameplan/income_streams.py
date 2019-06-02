@@ -16,7 +16,7 @@ class IncomeStream():
         self.first_pmt_dt = first_pmt_dt
         self.last_pmt_dt = (
             last_pmt_dt if last_pmt_dt
-            else self.first_pmt_dt + pd.DateOffset(years=1)
+            else first_pmt_dt + pd.DateOffset(years=1)
         )
 
     @property
