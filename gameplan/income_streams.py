@@ -1,56 +1,19 @@
 import pandas as pd
 import numpy as np
 
-import gameplan.helpers as hp
+from gameplan.cashflows import CashFlow
 
 
-class IncomeStream():
+class IncomeStream(CashFlow):
     def __init__(self, income_type, amount, freq, start_dt, end_dt=None):
-        self.income_type = income_type
-        self.amount = amount
-        self.freq = freq
-        self.start_dt = start_dt
-        self.end_dt = (
-            end_dt if end_dt
-            else start_dt + pd.DateOffset(years=1)
-        )
-
-    @property
-    def cash_flows(self):
-        """A pandas dataframe representing the cashflows from the income stream.
-        """
-        freq = hp.FREQ_MAP.get(self.freq, self.freq)
-        date_range = pd.date_range(
-            start=self.start_dt,
-            end=self.end_dt,
+        super().__init__(
+            cashflow_type='income',
+            name=income_type,
+            amount=amount,
             freq=freq,
-            normalize=True
+            start_dt=start_dt,
+            end_dt=end_dt,
         )
-
-        cash_flows = pd.DataFrame(
-            index=date_range,
-            data=[self.amount] * len(date_range),
-            columns=[self.income_type]
-        )
-
-        return cash_flows
-
-
-    def plot_cash_flows(self, cumulative=True, **kwargs):
-        if cumulative:
-            to_plt = (
-                self.cash_flows
-                .resample('d')
-                .mean()
-                .cumsum()
-                .fillna(method='ffill')
-            )
-            chart_type = 'line'
-        else:
-            to_plt = self.cash_flows
-            chart_type = 'bar'
-
-        to_plt.plot(kind=chart_type, **kwargs)
 
 
 class Salary(IncomeStream):
