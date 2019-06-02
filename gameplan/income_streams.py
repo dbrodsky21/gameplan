@@ -5,15 +5,14 @@ import gameplan.helpers as hp
 
 
 class IncomeStream():
-    def __init__(self, income_type, amount, freq, first_pmt_dt,
-                 last_pmt_dt=None):
+    def __init__(self, income_type, amount, freq, start_dt, end_dt=None):
         self.income_type = income_type
         self.amount = amount
         self.freq = freq
-        self.first_pmt_dt = first_pmt_dt
-        self.last_pmt_dt = (
-            last_pmt_dt if last_pmt_dt
-            else first_pmt_dt + pd.DateOffset(years=1)
+        self.start_dt = start_dt
+        self.end_dt = (
+            end_dt if end_dt
+            else start_dt + pd.DateOffset(years=1)
         )
 
     @property
@@ -22,8 +21,8 @@ class IncomeStream():
         """
         freq = hp.FREQ_MAP.get(self.freq, self.freq)
         date_range = pd.date_range(
-            start=self.first_pmt_dt,
-            end=self.last_pmt_dt,
+            start=self.start_dt,
+            end=self.end_dt,
             freq=freq,
             normalize=True
         )
@@ -58,22 +57,22 @@ class Salary(IncomeStream):
     def __init__(self, paycheck_amt, payday_freq, next_paycheck_dt=None,
                  last_paycheck_dt=None):
 
-        first_pmt_dt = (
+        start_dt = (
             next_paycheck_dt if next_paycheck_dt
             else hp.get_next_date_offset(payday_freq)
         )
         # TO DO: add validation that first/last dts aren't conflicting
-        last_pmt_dt = (
+        end_dt = (
             last_paycheck_dt if last_paycheck_dt
-            else first_pmt_dt + pd.DateOffset(years=1)
+            else start_dt + pd.DateOffset(years=1)
         )
 
         super().__init__(
             income_type='salary',
             amount=paycheck_amt,
             freq=payday_freq,
-            first_pmt_dt=first_pmt_dt,
-            last_pmt_dt=last_pmt_dt
+            start_dt=start_dt,
+            end_dt=end_dt
         )
 
 
