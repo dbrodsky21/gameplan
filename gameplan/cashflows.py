@@ -29,6 +29,17 @@ class CashFlow():
             [amount] * len(self.date_range)
         )
 
+
+    @classmethod
+    def from_cashflow(cls, cashflow, cashflow_type=None, name=None):
+        cashflow_type = cashflow_type if cashflow_type is not None else cashflow._cashflow_type
+        name = name if name is not None else cashflow.name
+        date_range = cashflow.date_range
+        values = cashflow.values
+        return cls(cashflow_type=cashflow_type, name=name,date_range=date_range,
+                   values=values)
+
+
     @property
     def date_range(self):
         freq = hp.FREQ_MAP.get(self.freq, self.freq)
