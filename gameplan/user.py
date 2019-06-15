@@ -65,7 +65,7 @@ class User():
         if not self.income_streams:
             warnings.warn('No income streams associated w/ user')
             return None
-        df = pd.concat([x.cash_flows for x in self.income_streams], axis=1)
+        df = pd.concat([x.cash_flows_df for x in self.income_streams], axis=1)
         df['total_income'] = df.sum(axis=1)
 
         return df
@@ -81,7 +81,7 @@ class User():
         if not self.expenses:
             warnings.warn('No expenses associated w/ user')
             return None
-        df = pd.concat([x.cash_flows for x in self.expenses], axis=1)
+        df = pd.concat([x.cash_flows_df for x in self.expenses], axis=1)
         df['total_expenses'] = df.sum(axis=1)
 
         return df
