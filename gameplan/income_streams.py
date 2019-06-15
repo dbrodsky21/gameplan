@@ -13,6 +13,7 @@ class IncomeStream(CashFlow):
             freq=freq,
             start_dt=start_dt,
             end_dt=end_dt,
+            recurring=True
         )
 
 
@@ -22,7 +23,7 @@ class Salary(IncomeStream):
 
         start_dt = (
             next_paycheck_dt if next_paycheck_dt
-            else hp.get_next_date_offset(payday_freq)
+            else hp.get_offset_date(payday_freq)
         )
         # TO DO: add validation that first/last dts aren't conflicting
         end_dt = (
@@ -42,4 +43,4 @@ class Salary(IncomeStream):
     @property
     def annualized_salary(self):
         """TO DO: refactor"""
-        return self.cash_flows.resample('365D').sum().values[0][0]
+        return self.cash_flows_df.resample('365D').sum().values[0][0]

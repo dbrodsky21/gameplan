@@ -13,11 +13,7 @@ class Expense(CashFlow):
             amount=amount,
             start_dt=start_dt,
             freq=freq,
-        )
-        self.recurring = recurring
-        self.end_dt = start_dt if not recurring else (
-            end_dt if end_dt
-            else start_dt + pd.DateOffset(years=1)
+            recurring=recurring
         )
 
 
