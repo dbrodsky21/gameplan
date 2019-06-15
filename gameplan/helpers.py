@@ -6,6 +6,9 @@ FREQ_MAP = {
 }
 
 
-def get_next_date_offset(freq, ref_date=pd.datetime.today()):
+def get_offset_date(freq, ref_date=pd.datetime.today(), rollback=False):
     offset = pd.tseries.frequencies.to_offset(freq)
-    return offset.rollforward(ref_date)
+    if rollback:
+        return offset.rollback(ref_date)
+    else:
+        return offset.rollforward(ref_date)
