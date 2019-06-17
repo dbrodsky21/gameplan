@@ -4,7 +4,7 @@ import shelve
 import warnings
 import zlib
 
-from gameplan import paths, income_streams, expenses
+from gameplan import paths, income_streams, expenses, assets
 
 class User():
     def __init__(self, email):
@@ -14,10 +14,10 @@ class User():
         self.education = None # education object includes highest level of education, which college, etc.
         self.credit_score = None
         self.health = None # health object can include health_status = ['good', 'bad', etc.], insurance = [yes/no]
-        self.income_streams = [] # includes salary, etc.
-        self.expenses = []
-        self.assets = []
-        self.liabilities = []
+        self.income_streams = Collection(collection_type=income_streams.IncomeStream, objects={}) # includes salary, etc.
+        self.expenses = Collection(collection_type=expenses.Expense, objects={})
+        self.assets = Collection(collection_type=assets.Asset, objects={})
+        # self.liabilities = Collection(collection_type=income_streams.IncomeStream, objects={})
 
         self.save_user()
 
@@ -46,17 +46,17 @@ class User():
             if verbose:
                 print("Progress Saved!")
 
-    def add_income_stream(self, income_stream):
-        if not isinstance(income_stream, income_streams.IncomeStream):
-            raise ValueError("income_stream must be a gameplan.income_streams.IncomeStream object")
 
-        self._income_streams = self.income_streams.append(income_stream)
+    def add_income_stream(self, income_stream, label=None, if_exists='error'):
+        self.income_streams.add_object(income_stream, label, if_exists)
 
-    def add_expense(self, expense):
-        if not isinstance(expense, expenses.Expense):
-            raise ValueError("expense must be a gameplan.expenses.Expense object")
 
-        self._expenses = self.expenses.append(expense)
+    def add_expense(self, expense, label=None, if_exists='error'):
+        self.expenses.add_object(expense, label, if_exists)
+
+
+    def add_asset(self, asset, label=None, if_exists='error'):
+        self.expenses.add_object(asset, label, if_exists)
 
 
     @property
@@ -65,7 +65,9 @@ class User():
         if not self.income_streams:
             warnings.warn('No income streams associated w/ user')
             return None
-        df = pd.concat([x.cash_flows_df for x in self.income_streams], axis=1)
+        df = pd.concat(
+                [x.cash_flows_df for x in self.income_streams.contents.values()]
+                , axis=1)
         df['total_income'] = df.sum(axis=1)
 
         return df
@@ -81,7 +83,9 @@ class User():
         if not self.expenses:
             warnings.warn('No expenses associated w/ user')
             return None
-        df = pd.concat([x.cash_flows_df for x in self.expenses], axis=1)
+        df = pd.concat(
+                [x.cash_flows_df for x in self.expenses.contents.values()]
+                , axis=1)
         df['total_expenses'] = df.sum(axis=1)
 
         return df
