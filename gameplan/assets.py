@@ -59,7 +59,7 @@ class CashSavings(Asset):
             )
             if if_exists == 'error':
                 raise ValueError(error_message)
-            elif if_exists='overwrite':
+            elif if_exists == 'overwrite':
                 warnings.warn(warning_message)
             else:
                 raise ValueError(error_message)
