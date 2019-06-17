@@ -5,6 +5,7 @@ import warnings
 import zlib
 
 from gameplan import paths, income_streams, expenses, assets
+from gameplan.collections import Collection
 
 class User():
     def __init__(self, email):
