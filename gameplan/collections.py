@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 import gameplan.helpers as hp
+from gameplan.contributions import Contribution
 from gameplan.income_streams import IncomeStream
 from gameplan.expenses import Expense
 
@@ -50,9 +51,8 @@ class Collection():
         if not self.contents:
             if warn: warnings.warn('This Collection is empty.')
             return None
-        df = pd.concat(
-                [getattr(x, to_total) for x in self.contents.values()]
-                , axis=1)
+        coll_contents = [getattr(x, to_total) for x in self.contents.values()]
+        df = pd.concat(coll_contents, axis=1).fillna(0)
         df[totals_col_label] = df.sum(axis=1)
 
         return df
@@ -101,4 +101,24 @@ class Expenses(Collection):
         return self._get_total(
                     to_total='cash_flows_df',
                     totals_col_label='total_expenses'
+                    )
+
+
+class Contributions(Collection):
+    def __init__(self, contributions={}):
+        super().__init__(collection_type=Contribution, objects=contributions)
+
+    @property
+    def contributions_df(self):
+        """Think about temporal aspect here too"""
+        return self._get_totals_df(
+                    to_total='cash_flows_df',
+                    totals_col_label='total_contributions'
+                    )
+
+    @property
+    def total_contributions(self):
+        return self._get_total(
+                    to_total='cash_flows_df',
+                    totals_col_label='total_contributions'
                     )
