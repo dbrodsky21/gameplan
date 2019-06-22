@@ -4,8 +4,9 @@ import shelve
 import warnings
 import zlib
 
-from gameplan import paths, income_streams, expenses, assets
-from gameplan.collections import Collection
+from gameplan.assets import Asset
+from gameplan.collections import Collection, IncomeStreams, Expenses
+from gameplan import paths
 
 class User():
     def __init__(self, email):
@@ -15,9 +16,9 @@ class User():
         self.education = None # education object includes highest level of education, which college, etc.
         self.credit_score = None
         self.health = None # health object can include health_status = ['good', 'bad', etc.], insurance = [yes/no]
-        self.income_streams = Collection(collection_type=income_streams.IncomeStream, objects={}) # includes salary, etc.
-        self.expenses = Collection(collection_type=expenses.Expense, objects={})
-        self.assets = Collection(collection_type=assets.Asset, objects={})
+        self.income_streams = IncomeStreams(income_streams={}) # includes salary, etc.
+        self.expenses = Expenses(expenses={})
+        self.assets = Collection(collection_type=Asset, objects={})
         # self.liabilities = Collection(collection_type=income_streams.IncomeStream, objects={})
 
         self.save_user()
@@ -57,51 +58,16 @@ class User():
 
 
     def add_asset(self, asset, label=None, if_exists='error'):
-        self.expenses.add_object(asset, label, if_exists)
-
-
-    @property
-    def income_streams_df(self):
-        """Think about temporal aspect here too"""
-        if not self.income_streams:
-            warnings.warn('No income streams associated w/ user')
-            return None
-        df = pd.concat(
-                [x.cash_flows_df for x in self.income_streams.contents.values()]
-                , axis=1)
-        df['total_income'] = df.sum(axis=1)
-
-        return df
-
-    @property
-    def total_income(self):
-        df = self.income_streams_df
-        return self.income_streams_df.total_income if df is not None else None
-
-    @property
-    def expenses_df(self):
-        """Think about temporal aspect here too"""
-        if not self.expenses:
-            warnings.warn('No expenses associated w/ user')
-            return None
-        df = pd.concat(
-                [x.cash_flows_df for x in self.expenses.contents.values()]
-                , axis=1)
-        df['total_expenses'] = df.sum(axis=1)
-
-        return df
-
-    @property
-    def total_expenses(self):
-        df = self.expenses_df
-        return self.expenses_df.total_expenses if df is not None else None
+        self.assets.add_object(asset, label, if_exists)
 
 
     @property
     def cash_flows_df(self):
+        inflows = self.income_streams.income_streams_df
+        outflows = self.expenses.expenses_df
         df = pd.concat([
-            self.income_streams_df,
-            -self.expenses_df if self.expenses_df is not None else None
+            inflows,
+            -outflows if outflows is not None else None  # to prevent negating None
         ], axis=1).fillna(0)
 
         return df
@@ -112,7 +78,7 @@ class User():
     @property
     def net_cash_flow(self):
         df = self.cash_flows_df
-        return df['total_income'] + df['total_expenses']
+        return df['total_income'] + df['total_expenses'] # TO DO: make less fragile
 
     def agg_net_cash_flows(self, freq):
         return self.net_cash_flow.resample(freq).sum()

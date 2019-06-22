@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 
 import gameplan.helpers as hp
+from gameplan.income_streams import IncomeStream
+from gameplan.expenses import Expense
 
 
 class Collection():
@@ -41,3 +43,62 @@ class Collection():
             del self.contents[label]
         elif verbose:
             warnings.warn(f"No object w/ label '{label}' exists.")
+
+
+    def _get_totals_df(self, to_total, warn=True, totals_col_label='total'):
+        "Each collection subclass should use this to create a totals_df property."
+        if not self.contents:
+            if warn: warnings.warn('This Collection is empty.')
+            return None
+        df = pd.concat(
+                [getattr(x, to_total) for x in self.contents.values()]
+                , axis=1)
+        df[totals_col_label] = df.sum(axis=1)
+
+        return df
+
+    def _get_total(self, to_total, totals_col_label='total'):
+        "Each collection subclass should use this to create a totals_df property."
+        totals_df = self._get_totals_df(to_total, totals_col_label=totals_col_label)
+        return totals_df[totals_col_label] if totals_df is not None else None
+
+
+
+class IncomeStreams(Collection):
+    def __init__(self, income_streams={}):
+        super().__init__(collection_type=IncomeStream, objects=income_streams)
+
+    @property
+    def income_streams_df(self):
+        """Think about temporal aspect here too"""
+        return self._get_totals_df(
+                    to_total='cash_flows_df',
+                    totals_col_label='total_income'
+                    )
+
+    @property
+    def total_income(self):
+        return self._get_total(
+                    to_total='cash_flows_df',
+                    totals_col_label='total_income'
+                    )
+
+
+class Expenses(Collection):
+    def __init__(self, expenses={}):
+        super().__init__(collection_type=Expense, objects=expenses)
+
+    @property
+    def expenses_df(self):
+        """Think about temporal aspect here too"""
+        return self._get_totals_df(
+                    to_total='cash_flows_df',
+                    totals_col_label='total_expenses'
+                    )
+
+    @property
+    def total_expenses(self):
+        return self._get_total(
+                    to_total='cash_flows_df',
+                    totals_col_label='total_expenses'
+                    )
