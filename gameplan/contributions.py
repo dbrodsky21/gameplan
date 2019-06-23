@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import warnings
 
 from gameplan.cashflows import CashFlow
 
@@ -18,6 +17,7 @@ class Contribution(CashFlow):
             freq=freq,
             start_dt=start_dt,
             end_dt=end_dt,
+            outflow=False
         )
 
     @classmethod

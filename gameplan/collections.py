@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
+import warnings
 
 import gameplan.helpers as hp
+from gameplan.cashflows import CashFlow
 from gameplan.contributions import Contribution
 from gameplan.income_streams import IncomeStream
 from gameplan.expenses import Expense
@@ -46,79 +48,70 @@ class Collection():
             warnings.warn(f"No object w/ label '{label}' exists.")
 
 
-    def _get_totals_df(self, to_total, warn=True, totals_col_label='total'):
+class CashFlowCollection(Collection):
+    """
+    TO DO: Needs to be able to be instantiated from other instances of
+    CashFlowCollection, e.g. IncomeStreams, Expenses, etc.
+    """
+    def __init__(self, collection_type=CashFlow, objects={}):
+        if not issubclass(collection_type, CashFlow):
+            raise ValueError(f"collection_type must be of type {CashFlow}")
+
+        cf_objects = (
+            hp.combine_list_of_dicts(objects) if isinstance(objects, list)
+            else objects
+            )
+        super().__init__(collection_type, cf_objects)
+
+    @property
+    def _collection_type_str(self):
+        return hp.to_snake_case(self.collection_type.__name__)
+
+    @property
+    def inflows(self):
+        return {k: v for k,v in self.contents.items() if not v._outflow}
+
+    @property
+    def outflows(self):
+        return {k: v for k,v in self.contents.items() if v._outflow}
+
+    @property
+    def as_df(self):
+        return self._get_totals_df()
+
+    def agg_cash_flows(self, freq):
+        return self.as_df.resample(freq).sum()
+
+    @property
+    def total(self):
+        totals_col_label = f'total_net_{self._collection_type_str}'
+        return getattr(self.as_df, totals_col_label, None)
+
+
+    def _get_totals_df(self, warn=True):
         "Each collection subclass should use this to create a totals_df property."
         if not self.contents:
             if warn: warnings.warn('This Collection is empty.')
             return None
-        coll_contents = [getattr(x, to_total) for x in self.contents.values()]
-        df = pd.concat(coll_contents, axis=1).fillna(0)
+        inflows = [x.cash_flows_df for x in self.inflows.values()]
+        outflows = [-x.cash_flows_df for x in self.outflows.values()]
+        df = pd.concat(inflows + outflows, axis=1).fillna(0)
+        totals_col_label = f'total_net_{self._collection_type_str}'
         df[totals_col_label] = df.sum(axis=1)
 
         return df
 
-    def _get_total(self, to_total, totals_col_label='total'):
-        "Each collection subclass should use this to create a totals_df property."
-        totals_df = self._get_totals_df(to_total, totals_col_label=totals_col_label)
-        return totals_df[totals_col_label] if totals_df is not None else None
 
-
-
-class IncomeStreams(Collection):
+class IncomeStreams(CashFlowCollection):
     def __init__(self, income_streams={}):
         super().__init__(collection_type=IncomeStream, objects=income_streams)
 
-    @property
-    def income_streams_df(self):
-        """Think about temporal aspect here too"""
-        return self._get_totals_df(
-                    to_total='cash_flows_df',
-                    totals_col_label='total_income'
-                    )
 
-    @property
-    def total_income(self):
-        return self._get_total(
-                    to_total='cash_flows_df',
-                    totals_col_label='total_income'
-                    )
-
-
-class Expenses(Collection):
+class Expenses(CashFlowCollection):
     def __init__(self, expenses={}):
         super().__init__(collection_type=Expense, objects=expenses)
 
-    @property
-    def expenses_df(self):
-        """Think about temporal aspect here too"""
-        return self._get_totals_df(
-                    to_total='cash_flows_df',
-                    totals_col_label='total_expenses'
-                    )
 
-    @property
-    def total_expenses(self):
-        return self._get_total(
-                    to_total='cash_flows_df',
-                    totals_col_label='total_expenses'
-                    )
-
-
-class Contributions(Collection):
+class Contributions(CashFlowCollection):
     def __init__(self, contributions={}):
         super().__init__(collection_type=Contribution, objects=contributions)
-
-    @property
-    def contributions_df(self):
-        """Think about temporal aspect here too"""
-        return self._get_totals_df(
-                    to_total='cash_flows_df',
-                    totals_col_label='total_contributions'
-                    )
-
-    @property
-    def total_contributions(self):
-        return self._get_total(
-                    to_total='cash_flows_df',
-                    totals_col_label='total_contributions'
-                    )

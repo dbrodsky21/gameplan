@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import warnings
 
 from gameplan.cashflows import CashFlow
 from gameplan.collections import Contributions

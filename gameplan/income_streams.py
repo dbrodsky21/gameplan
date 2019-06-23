@@ -13,7 +13,8 @@ class IncomeStream(CashFlow):
             freq=freq,
             start_dt=start_dt,
             end_dt=end_dt,
-            recurring=True
+            recurring=True,
+            outflow=False
         )
 
 

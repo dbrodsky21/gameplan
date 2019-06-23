@@ -7,7 +7,7 @@ import gameplan.helpers as hp
 class CashFlow():
     def __init__(self, cashflow_type, name, date_range=None, values=None,
                  amount=None, recurring=None, freq=None, start_dt=None,
-                 end_dt=None):
+                 end_dt=None, outflow=False):
         """
         """
         self._cashflow_type = cashflow_type
@@ -28,6 +28,7 @@ class CashFlow():
         self.values = values if values is not None else (
             [amount] * len(self.date_range)
         )
+        self._outflow = outflow
 
 
     @classmethod
@@ -36,8 +37,9 @@ class CashFlow():
         name = name if name is not None else cashflow.name
         date_range = cashflow.date_range
         values = cashflow.values
+        outflow = cashflow._outflow
         return cls(cashflow_type=cashflow_type, name=name,date_range=date_range,
-                   values=values)
+                   values=values, outflow=outflow)
 
 
     @property

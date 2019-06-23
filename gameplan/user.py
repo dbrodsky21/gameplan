@@ -5,7 +5,8 @@ import warnings
 import zlib
 
 from gameplan.assets import Asset
-from gameplan.collections import Collection, IncomeStreams, Expenses
+from gameplan.cashflows import CashFlow
+from gameplan.collections import Collection, CashFlowCollection, IncomeStreams, Expenses
 from gameplan import paths
 
 class User():
@@ -45,8 +46,7 @@ class User():
         """"TO DO: This should keep track of where in the process the user is"""
         with shelve.open(paths.USERS_DB_PATH, 'c') as user_db:
             user_db[self.user_id] = self
-            if verbose:
-                print("Progress Saved!")
+            if verbose: print("Progress Saved!")
 
 
     def add_income_stream(self, income_stream, label=None, if_exists='error'):
@@ -62,26 +62,12 @@ class User():
 
 
     @property
-    def cash_flows_df(self):
-        inflows = self.income_streams.income_streams_df
-        outflows = self.expenses.expenses_df
-        df = pd.concat([
-            inflows,
-            -outflows if outflows is not None else None  # to prevent negating None
-        ], axis=1).fillna(0)
+    def all_cashflows(self):
+        return CashFlowCollection(
+            collection_type=CashFlow,
+            objects=[self.income_streams.contents, self.expenses.contents]
+        )
 
-        return df
-
-    def agg_cash_flows(self, freq):
-        return self.cash_flows_df.resample(freq).sum()
-
-    @property
-    def net_cash_flow(self):
-        df = self.cash_flows_df
-        return df['total_income'] + df['total_expenses'] # TO DO: make less fragile
-
-    def agg_net_cash_flows(self, freq):
-        return self.net_cash_flow.resample(freq).sum()
 
     # @property
     # def net_worth(self):

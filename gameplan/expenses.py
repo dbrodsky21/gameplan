@@ -13,7 +13,8 @@ class Expense(CashFlow):
             amount=amount,
             start_dt=start_dt,
             freq=freq,
-            recurring=recurring
+            recurring=recurring,
+            outflow=True
         )
 
 

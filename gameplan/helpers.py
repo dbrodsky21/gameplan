@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 
 FREQ_MAP = {
@@ -12,3 +13,13 @@ def get_offset_date(freq, ref_date=pd.datetime.today(), rollback=False):
         return offset.rollback(ref_date)
     else:
         return offset.rollforward(ref_date)
+
+
+def combine_list_of_dicts(L):
+    "TO DO: Make this clearer"
+    return {k: v for d in L for k, v in d.items()}
+
+
+def to_snake_case(s):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower()
