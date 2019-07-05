@@ -17,7 +17,7 @@ def get_offset_date(freq, ref_date=pd.datetime.today(), rollback=False):
 
 def combine_list_of_dicts(L):
     "TO DO: Make this clearer"
-    return {k: v for d in L for k, v in d.items()}
+    return {k: v for d in L if d is not None for k, v in d.items()}
 
 
 def to_snake_case(s):

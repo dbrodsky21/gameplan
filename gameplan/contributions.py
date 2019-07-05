@@ -5,8 +5,9 @@ from gameplan.cashflows import CashFlow
 
 
 class Contribution(CashFlow):
-    def __init__(self, contribution_label, date_range=None, values=None, amount=None, recurring=None,
-                 freq=None, start_dt=None, end_dt=None):
+    def __init__(self, contribution_label, date_range=None, values=None,
+                 amount=None, recurring=None, freq=None, start_dt=None,
+                 end_dt=None):
         super().__init__(
             cashflow_type='contribution',
             name=contribution_label,
