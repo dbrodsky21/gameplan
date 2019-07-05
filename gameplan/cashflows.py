@@ -38,7 +38,7 @@ class CashFlow():
         date_range = cashflow.date_range
         values = cashflow.values
         outflow = cashflow._outflow
-        return cls(cashflow_type=cashflow_type, name=name,date_range=date_range,
+        return cls(cashflow_type=cashflow_type, name=name, date_range=date_range,
                    values=values, outflow=outflow)
 
 
