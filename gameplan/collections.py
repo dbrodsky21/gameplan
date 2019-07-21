@@ -12,13 +12,13 @@ from gameplan.expenses import Expense
 class Collection():
     def __init__(self, collection_type, objects={}):
         self.collection_type = collection_type
-        if [x for x in objects.values() if not issubclass(x, collection_type)]:
+        if [x for x in objects.values() if not isinstance(x, collection_type)]:
             raise ValueError(f"All objects must be of type {collection_type}")
         self.contents = objects
 
 
     def add_object(self, object, label=None, if_exists='error'):
-        if not issubclass(object, self.collection_type):
+        if not isinstance(object, self.collection_type):
             raise ValueError(f"Object must be a {self.collection_type} object.")
 
         default_label = f"item_{len(self.contents) + 1}"
@@ -58,7 +58,7 @@ class CashFlowCollection(Collection):
             raise ValueError(f"collection_type must be of type {CashFlow}")
 
         cf_objects = (
-            hp.combine_list_of_dicts(objects) if issubclass(objects, list)
+            hp.combine_list_of_dicts(objects) if isinstance(objects, list)
             else objects
             )
         super().__init__(collection_type, cf_objects)
