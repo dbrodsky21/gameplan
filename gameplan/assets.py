@@ -13,12 +13,20 @@ class Asset():
     def __init__(self, asset_type):
         self.asset_type = asset_type
 
+    def simulate_path(self, **kwargs):
+        raise NotImplementedError
+
 
 class CashSavings(Asset):
     # How much cash do you currently have across all of your checking and savings accounts? $_______
     # What proportion of your take-home pay do you expect to go to these accounts over the course of the next few years (on average)? ______%
-
-    def __init__(self, initial_balance=0, annualized_interest_rate=0.0):
+    DEFAULT_DATE_RANGE = pd.date_range(
+        start=pd.datetime.today().date(),
+        end=pd.datetime.today().date() + pd.DateOffset(years=20),
+        freq='D'
+    )
+    def __init__(self, initial_balance=0, annualized_interest_rate=0.0,
+                 date_range=DEFAULT_DATE_RANGE):
         super().__init__(asset_type='cash_savings')
         self.initial_balance = initial_balance
         self.annualized_interest_rate = annualized_interest_rate
@@ -30,6 +38,7 @@ class CashSavings(Asset):
             recurring=False
         )
         self.add_contribution(init_contrib)
+        self.date_range = date_range
 
 
     def add_contribution(self, contribution, label=None, if_exists='error'):
@@ -39,7 +48,11 @@ class CashSavings(Asset):
 
     @property
     def value_through_time(self):
-        t = self.contributions.total
+        t = (
+            self.contributions.total
+            .reindex(index=self.date_range, fill_value=0)
+            .resample('D').sum() # downsample to daily)
+        ) # get a daily view of contributions over the entire self.date_range
         date_diffs = t.index.to_series().diff()
         compound_factors = date_diffs.apply(
             lambda x: np.e**(self.annualized_interest_rate * x.days / 365.25)
@@ -54,11 +67,14 @@ class CashSavings(Asset):
 
         return pd.Series(data=totals, index=t.index, name='total_value')
 
+    def simulate_path(self):
+        """There's at least some stochasticity here around interest rate"""
+        return self.value_through_time
 
 class Equity(Asset): # should be type Investment
     DEFAULT_DATE_RANGE = pd.date_range(
         start=pd.datetime.today().date(),
-        end=pd.datetime.today().date() + pd.DateOffset(years=10),
+        end=pd.datetime.today().date() + pd.DateOffset(years=20),
         freq='B'
     )
     DEFAULT_MU = fe_sim.SPXmean
@@ -79,9 +95,17 @@ class Equity(Asset): # should be type Investment
 
     def _generate_price_path(self, label=None):
         returns = self._generate_returns()
-        prices = self.init_value * pd.Series(index=self.date_range, data=returns, name=label).cumprod()
+        prices = self.init_value * pd.Series(
+            index=self.date_range,
+            data=returns,
+            name=label
+        ).cumprod()
 
         return prices
+
+
+    def simulate_path(self):
+        return self._generate_price_path().resample('D').pad()
 
 
     def _generate_price_paths(self, how_many, write_type=None):
