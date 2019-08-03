@@ -10,26 +10,9 @@ from gameplan.contributions import Contribution
 
 
 class Asset():
-    def __init__(self, asset_type):
+    def __init__(self, asset_type, initial_balance, date_range):
         self.asset_type = asset_type
-
-    def simulate_path(self, **kwargs):
-        raise NotImplementedError
-
-
-class CashSavings(Asset):
-    # How much cash do you currently have across all of your checking and savings accounts? $_______
-    # What proportion of your take-home pay do you expect to go to these accounts over the course of the next few years (on average)? ______%
-    DEFAULT_DATE_RANGE = pd.date_range(
-        start=pd.datetime.today().date(),
-        end=pd.datetime.today().date() + pd.DateOffset(years=20),
-        freq='D'
-    )
-    def __init__(self, initial_balance=0, annualized_interest_rate=0.0,
-                 date_range=DEFAULT_DATE_RANGE):
-        super().__init__(asset_type='cash_savings')
         self.initial_balance = initial_balance
-        self.annualized_interest_rate = annualized_interest_rate
         self.contributions = Contributions(contributions={})
         init_contrib = Contribution(
             contribution_label='initial_balance',
@@ -46,17 +29,25 @@ class CashSavings(Asset):
         self.contributions.add_object(contribution, label, if_exists)
 
 
+    def simulate_path(self, **kwargs):
+        raise NotImplementedError
+
+    def _get_compound_factors(self, date_diffs, *args, **kwargs):
+        raise NotImplementedError
+
     @property
     def value_through_time(self):
+        full_index = pd.DatetimeIndex.union(
+            self.contributions.total.index,
+            self.date_range
+        )
         t = (
             self.contributions.total
-            .reindex(index=self.date_range, fill_value=0)
+            .reindex(index=full_index, fill_value=0)
             .resample('D').sum() # downsample to daily)
         ) # get a daily view of contributions over the entire self.date_range
         date_diffs = t.index.to_series().diff()
-        compound_factors = date_diffs.apply(
-            lambda x: np.e**(self.annualized_interest_rate * x.days / 365.25)
-            )
+        compound_factors = self._get_compound_factors(date_diffs)
 
         totals = []
         total = 0
@@ -67,9 +58,35 @@ class CashSavings(Asset):
 
         return pd.Series(data=totals, index=t.index, name='total_value')
 
+
+class CashSavings(Asset):
+    # How much cash do you currently have across all of your checking and savings accounts? $_______
+    # What proportion of your take-home pay do you expect to go to these accounts over the course of the next few years (on average)? ______%
+    DEFAULT_DATE_RANGE = pd.date_range(
+        start=pd.datetime.today().date(),
+        end=pd.datetime.today().date() + pd.DateOffset(years=20),
+        freq='D'
+    )
+    def __init__(self, initial_balance=0, annualized_interest_rate=0.0,
+                 date_range=DEFAULT_DATE_RANGE):
+        super().__init__(
+            asset_type='cash_savings',
+            initial_balance=initial_balance,
+            date_range = date_range
+            )
+        self.annualized_interest_rate = annualized_interest_rate
+
+
+    def _get_compound_factors(self, date_diffs):
+        return date_diffs.apply(
+            lambda x: np.e**(self.annualized_interest_rate * x.days / 365.25)
+            )
+
+
     def simulate_path(self):
         """There's at least some stochasticity here around interest rate"""
         return self.value_through_time
+
 
 class Equity(Asset): # should be type Investment
     DEFAULT_DATE_RANGE = pd.date_range(
@@ -82,30 +99,40 @@ class Equity(Asset): # should be type Investment
 
     def __init__(self, ticker='SPY', init_value=1, mu=DEFAULT_MU,
                  sigma=DEFAULT_SIGMA, date_range=DEFAULT_DATE_RANGE):
+        super().__init__(
+            asset_type='Equity',
+            initial_balance=init_value,
+            date_range = date_range
+            )
         self.ticker=ticker
         self.init_value = init_value
         self.mu = mu
         self.sigma = sigma
-        self.date_range = date_range
 
 
     def _generate_returns(self):
         return fe_sim.gmix2ret(N=len(self.date_range), mean=self.mu, sigma=self.sigma)
 
 
-    def _generate_price_path(self, label=None):
-        "Represents prices at market opening on a given day."
-        returns = self._generate_returns()
-        prices = self.init_value * pd.Series(
-            index=self.date_range,
-            data=returns,
-            name=label
-        ).cumprod().shift(1).fillna(1.0) # force first day return to be 0%
+    def _get_compound_factors(self, date_diffs):
+        return (pd.Series(
+                    index=self.date_range,
+                    data=self._generate_returns()
+                    ).shift(1)
+                .reindex(date_diffs.index)
+                .resample('D')
+                .first()
+                .fillna(1.0)
+                )
 
-        return prices
+
+    def _generate_price_path(self, label=None):
+        # Unclear that we need this plus simulate_path
+        return self.value_through_time
 
 
     def simulate_path(self):
+        # Unclear that we need this plus _generate_price_path or the resample.pad()
         return self._generate_price_path().resample('D').pad()
 
 
