@@ -3,7 +3,7 @@ import numpy as np
 import warnings
 
 import gameplan.helpers as hp
-from gameplan.assets import Asset
+# from gameplan.assets import Asset
 from gameplan.cashflows import CashFlow
 from gameplan.contributions import Contribution
 from gameplan.income_streams import IncomeStream
@@ -117,14 +117,3 @@ class Expenses(CashFlowCollection):
 class Contributions(CashFlowCollection):
     def __init__(self, contributions={}):
         super().__init__(collection_type=Contribution, objects=contributions)
-
-class Assets(Collection):
-    def __init__(self, collection_type=Asset, objects={}):
-        if not issubclass(collection_type, Asset):
-            raise ValueError(f"collection_type must be of type {Asset}")
-
-        asset_objects = (
-            hp.combine_list_of_dicts(objects) if isinstance(objects, list)
-            else objects
-            )
-        super().__init__(collection_type, asset_objects)

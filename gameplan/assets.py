@@ -5,7 +5,7 @@ import random
 import fecon236.prob.sim as fe_sim
 
 from gameplan.cashflows import CashFlow
-from gameplan.collections import Contributions
+from gameplan.collections import Collection, Contributions
 from gameplan.contributions import Contribution
 
 
@@ -94,12 +94,13 @@ class Equity(Asset): # should be type Investment
 
 
     def _generate_price_path(self, label=None):
+        "Represents prices at market opening on a given day."
         returns = self._generate_returns()
         prices = self.init_value * pd.Series(
             index=self.date_range,
             data=returns,
             name=label
-        ).cumprod()
+        ).cumprod().shift(1).fillna(1.0) # force first day return to be 0%
 
         return prices
 
@@ -165,3 +166,33 @@ class Equity(Asset): # should be type Investment
         if show_mean: quantiles['mean'] = all_paths_df.mean(axis=1)
         quantiles.plot(**kwargs)
         if return_df: return quantiles
+
+
+class Assets(Collection):
+    def __init__(self, collection_type=Asset, objects={}):
+        if not issubclass(collection_type, Asset):
+            raise ValueError(f"collection_type must be of type {Asset}")
+
+        asset_objects = (
+            hp.combine_list_of_dicts(objects) if isinstance(objects, list)
+            else objects
+            )
+        super().__init__(collection_type, asset_objects)
+
+
+    def generate_path_df(self):
+        df = pd.DataFrame(
+            { k: v.simulate_path() for k,v in self.contents.items() }
+        ).fillna(method='bfill')
+
+        df['total'] = df.sum(axis=1)
+
+        return df
+
+    def generate_value_path(self):
+        return self.generate_path_df()['total']
+
+    @property
+    def current_value(self):
+        today = pd.datetime.today().date()
+        return self.generate_value_path()[today:].iloc[0]
