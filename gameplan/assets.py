@@ -5,7 +5,7 @@ import random
 import fecon236.prob.sim as fe_sim
 
 from gameplan.cashflows import CashFlow
-from gameplan.collections import Collection, Contributions
+from gameplan.collections import CashFlowCollection, Collection, Contributions
 from gameplan.contributions import Contribution
 
 
@@ -13,7 +13,7 @@ class Asset():
     def __init__(self, asset_type, initial_balance, date_range):
         self.asset_type = asset_type
         self.initial_balance = initial_balance
-        self.contributions = Contributions(contributions={})
+        self.credits_and_debits = CashFlowCollection(objects={})
         init_contrib = Contribution(
             contribution_label='initial_balance',
             amount=initial_balance,
@@ -26,8 +26,13 @@ class Asset():
 
     def add_contribution(self, contribution, label=None, if_exists='error'):
         label = label if label else contribution.name
-        self.contributions.add_object(contribution, label, if_exists)
+        self.credits_and_debits.add_object(contribution, label, if_exists)
 
+    # I'm very skeptical this needs to exist rather than combining w/ above
+    # Keeping for now cause don't want to rename/cleanup add_contribution
+    def add_debit(self, debit, label=None, if_exists='error'):
+        label = label if label else debit.name
+        self.credits_and_debits.add_object(debit, label, if_exists)
 
     def simulate_path(self, **kwargs):
         raise NotImplementedError
@@ -38,14 +43,14 @@ class Asset():
     @property
     def value_through_time(self):
         full_index = pd.DatetimeIndex.union(
-            self.contributions.total.index,
+            self.credits_and_debits.total.index,
             self.date_range
         )
         t = (
-            self.contributions.total
+            self.credits_and_debits.total
             .reindex(index=full_index, fill_value=0)
             .resample('D').sum() # downsample to daily)
-        ) # get a daily view of contributions over the entire self.date_range
+        ) # get a daily view of credits_and_debits over the entire self.date_range
         date_diffs = t.index.to_series().diff()
         compound_factors = self._get_compound_factors(date_diffs)
 
