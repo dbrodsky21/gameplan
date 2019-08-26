@@ -59,7 +59,8 @@ class CashFlowCollection(Collection):
     TO DO: Needs to be able to be instantiated from other instances of
     CashFlowCollection, e.g. IncomeStreams, Expenses, etc.
     """
-    def __init__(self, collection_type=CashFlow, objects={}):
+    def __init__(self, collection_type=CashFlow, objects={},
+                 totals_col_label=None):
         if not issubclass(collection_type, CashFlow):
             raise ValueError(f"collection_type must be of type {CashFlow}")
 
@@ -68,6 +69,8 @@ class CashFlowCollection(Collection):
             else objects
             )
         super().__init__(collection_type, cf_objects)
+        self.totals_col_label = f'total_net_{self._collection_type_str}'
+
 
     @property
     def inflows(self):
@@ -86,8 +89,7 @@ class CashFlowCollection(Collection):
 
     @property
     def total(self):
-        totals_col_label = f'total_net_{self._collection_type_str}'
-        return getattr(self.as_df, totals_col_label, None)
+        return getattr(self.as_df, self.totals_col_label, None)
 
 
     def _get_totals_df(self, warn=True):
@@ -98,7 +100,7 @@ class CashFlowCollection(Collection):
         inflows = [x.cash_flows_df for x in self.inflows.values()]
         outflows = [-x.cash_flows_df for x in self.outflows.values()]
         df = pd.concat(inflows + outflows, axis=1).fillna(0)
-        totals_col_label = f'total_net_{self._collection_type_str}'
+        totals_col_label = self.totals_col_label
         df[totals_col_label] = df.sum(axis=1)
 
         return df
