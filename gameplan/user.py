@@ -6,7 +6,10 @@ import zlib
 
 from gameplan.assets import Asset
 from gameplan.cashflows import CashFlow
-from gameplan.collections import Collection, CashFlowCollection, IncomeStreams, Expenses
+from gameplan.collections import Collection, CashFlowCollection
+from gameplan.expenses import Expenses
+from gameplan.income_streams import IncomeStreams
+
 from gameplan import paths
 
 class User():

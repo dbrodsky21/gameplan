@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 from gameplan.cashflows import CashFlow
+from gameplan.collections import CashFlowCollection
 
 
 class Expense(CashFlow):
@@ -42,3 +43,8 @@ class Utilities(Expense):
             freq=freq,
             end_dt=end_dt
         )
+
+
+class Expenses(CashFlowCollection):
+    def __init__(self, expenses={}):
+        super().__init__(collection_type=Expense, objects=expenses)

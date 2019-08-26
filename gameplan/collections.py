@@ -5,9 +5,9 @@ import warnings
 import gameplan.helpers as hp
 # from gameplan.assets import Asset
 from gameplan.cashflows import CashFlow
-from gameplan.contributions import Contribution
-from gameplan.income_streams import IncomeStream
-from gameplan.expenses import Expense
+# from gameplan.contributions import Contribution
+# from gameplan.income_streams import IncomeStream
+# from gameplan.expenses import Expense
 
 
 class Collection():
@@ -69,7 +69,10 @@ class CashFlowCollection(Collection):
             else objects
             )
         super().__init__(collection_type, cf_objects)
-        self.totals_col_label = f'total_net_{self._collection_type_str}'
+        self.totals_col_label = (
+            totals_col_label if totals_col_label
+            else f'total_net_{self._collection_type_str}'
+            )
 
 
     @property
@@ -104,18 +107,3 @@ class CashFlowCollection(Collection):
         df[totals_col_label] = df.sum(axis=1)
 
         return df
-
-
-class IncomeStreams(CashFlowCollection):
-    def __init__(self, income_streams={}):
-        super().__init__(collection_type=IncomeStream, objects=income_streams)
-
-
-class Expenses(CashFlowCollection):
-    def __init__(self, expenses={}):
-        super().__init__(collection_type=Expense, objects=expenses)
-
-
-class Contributions(CashFlowCollection):
-    def __init__(self, contributions={}):
-        super().__init__(collection_type=Contribution, objects=contributions)
