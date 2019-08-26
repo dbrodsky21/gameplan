@@ -28,6 +28,6 @@ class Contribution(CashFlow):
             else f"{pct:.0%} Contribution from {income_stream.name}"
         )
         date_range = income_stream.date_range
-        values = [pct * x for x in income_stream.values]
+        values = [pct * x for x in income_stream._values]
         return cls(contribution_label=label, date_range=date_range,
                    values=values)

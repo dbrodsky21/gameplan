@@ -5,7 +5,8 @@ from gameplan.cashflows import CashFlow
 
 
 class IncomeStream(CashFlow):
-    def __init__(self, income_type, amount, freq, start_dt, end_dt=None):
+    def __init__(self, income_type, amount, freq, start_dt, end_dt=None,
+                 tax_rate=0.0):
         super().__init__(
             cashflow_type='income',
             name=income_type,
@@ -16,6 +17,7 @@ class IncomeStream(CashFlow):
             recurring=True,
             outflow=False
         )
+        self.tax_rate = tax_rate
 
 
 class Salary(IncomeStream):

@@ -25,7 +25,7 @@ class CashFlow():
             self.freq=freq
 
         self.amount = amount
-        self.values = values if values is not None else (
+        self._values = values if values is not None else (
             [amount] * len(self.date_range)
         )
         self._outflow = outflow
@@ -36,7 +36,7 @@ class CashFlow():
         cashflow_type = cashflow_type if cashflow_type is not None else cashflow._cashflow_type
         name = name if name is not None else cashflow.name
         date_range = cashflow.date_range
-        values = cashflow.values
+        values = cashflow._values
         outflow = cashflow._outflow
         return cls(cashflow_type=cashflow_type, name=name, date_range=date_range,
                    values=values, outflow=outflow)
@@ -59,7 +59,7 @@ class CashFlow():
         """
         cash_flows = pd.DataFrame(
             index=self.date_range,
-            data=self.values,
+            data=self._values,
             columns=[self.name]
         )
 
