@@ -59,6 +59,13 @@ class InterestRateSeries():
 
         return rates_df
 
+class Liability():
+    def __init__(self, liability_type):
+        self.liability_type = liability_type
+
+    def get_debt_service_cost(self):
+        pass
+
 
 class StudentDebt():
     def __init__(self, principal_outstanding, interest_rate_spread, interest_rate_type='fixed',
