@@ -78,7 +78,7 @@ class Salary(IncomeStream):
 
     @property
     def total_deductions(self):
-        vals = (self.deductions.total if self.deductions.total
+        vals = (self.deductions.total if not pd.Series(self.deductions.total).empty
                 else self.cash_flows_df['salary'] * 0.0) # create a 0-filled series if no deductions
         return pd.Series(vals, name='total_deductions')
 
