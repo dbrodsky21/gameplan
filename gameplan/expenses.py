@@ -7,14 +7,17 @@ from gameplan.collections import CashFlowCollection
 
 class Expense(CashFlow):
     def __init__(self, expense_type, amount, recurring, start_dt, freq=None,
-                 end_dt=None):
+                 end_dt=None, date_range=None, values=None):
         super().__init__(
             cashflow_type='expense',
             name=expense_type,
             amount=amount,
             start_dt=start_dt,
+            end_dt=end_dt,
             freq=freq,
             recurring=recurring,
+            date_range=date_range,
+            values=values,
             outflow=True
         )
 
