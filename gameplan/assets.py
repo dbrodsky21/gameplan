@@ -202,6 +202,7 @@ class Equity(Asset): # should be type Investment
 
 class Assets(Collection):
     def __init__(self, collection_type=Asset, objects={}):
+        # TO DO: Should signature be assets= instead of objects=?
         if not issubclass(collection_type, Asset):
             raise ValueError(f"collection_type must be of type {Asset}")
 

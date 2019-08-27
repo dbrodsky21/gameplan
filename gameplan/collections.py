@@ -94,6 +94,30 @@ class CashFlowCollection(Collection):
     def total(self):
         return getattr(self.as_df, self.totals_col_label, None)
 
+    # gameplan.cashflows.CashFlow(
+    # cashflow_type,
+    #     name,
+    #     date_range=None,
+    #     values=None,
+    #     amount=None,
+    #     recurring=None,
+    #     freq=None,
+    #     start_dt=None,
+    #     end_dt=None,
+    #     outflow=False,)
+
+    def get_total_as_cashflow(self, freq, name=None):
+        if pd.Series(self.total).empty:
+            return None
+        total = self.total.resample(freq).sum()
+        label = name if name else self.totals_col_label
+        cf = CashFlow(
+                cashflow_type=self.collection_type,
+                name=label,
+                date_range=total.index,
+                values=total.values
+                )
+        return cf
 
     def _get_totals_df(self, warn=True):
         "Each collection subclass should use this to create a totals_df property."
