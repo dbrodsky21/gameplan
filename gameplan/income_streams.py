@@ -7,8 +7,8 @@ from gameplan.contributions import Deduction
 
 
 class IncomeStream(CashFlow):
-    def __init__(self, income_type, amount, freq, start_dt, end_dt=None,
-                 date_range=None, values=None, tax_rate=0.0):
+    def __init__(self, income_type, amount=None, freq=None, start_dt=None,
+                 end_dt=None, date_range=None, values=None, tax_rate=0.0):
         super().__init__(
             cashflow_type='income',
             name=income_type,
