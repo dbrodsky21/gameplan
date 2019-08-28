@@ -35,7 +35,7 @@ class Salary(IncomeStream):
         # TO DO: add validation that first/last dts aren't conflicting
         end_dt = (
             last_paycheck_dt if last_paycheck_dt
-            else start_dt + pd.DateOffset(years=1)
+            else start_dt + pd.DateOffset(years=20)
         )
         super().__init__(
             income_type='salary',

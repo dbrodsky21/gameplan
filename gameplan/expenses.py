@@ -24,7 +24,7 @@ class Expense(CashFlow):
 
 class Rent(Expense):
     def __init__(self, amount, start_dt=pd.datetime.today(), freq='MS',
-                 end_dt=pd.datetime.today() + pd.DateOffset(years=1)):
+                 end_dt=pd.datetime.today() + pd.DateOffset(years=20)):
         super().__init__(
             expense_type='rent',
             amount=amount,
@@ -37,7 +37,7 @@ class Rent(Expense):
 
 class Utilities(Expense):
     def __init__(self, amount, start_dt=pd.datetime.today(), freq='MS',
-                 end_dt=pd.datetime.today() + pd.DateOffset(years=1)):
+                 end_dt=pd.datetime.today() + pd.DateOffset(years=20)):
         super().__init__(
             expense_type='utilities',
             amount=amount,

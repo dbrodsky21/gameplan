@@ -5,6 +5,8 @@ import gameplan.helpers as hp
 
 
 class CashFlow():
+    DEFAULT_END_DT_OFFSET = pd.DateOffset(years=20)
+
     def __init__(self, cashflow_type, name, date_range=None, values=None,
                  amount=None, recurring=None, freq=None, start_dt=None,
                  end_dt=None, outflow=False):
@@ -20,7 +22,7 @@ class CashFlow():
             self.start_dt = start_dt
             self.end_dt = start_dt if not recurring else (
                 end_dt if end_dt
-                else start_dt + pd.DateOffset(years=1)
+                else start_dt + DEFAULT_END_DT_OFFSET
             )
             self.freq=freq
 
