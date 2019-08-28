@@ -23,3 +23,12 @@ def combine_list_of_dicts(L):
 def to_snake_case(s):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower()
+
+
+def compound_interest(principal, rate, times_per_year, years):
+    # (1 + r/n)
+    body = 1 + (rate / times_per_year)
+    # nt
+    exponent = times_per_year * years
+    # P(1 + r/n)^nt
+    return principal * pow(body, exponent)
