@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import warnings
 
 import gameplan.helpers as hp
 
@@ -9,7 +10,9 @@ class CashFlow():
 
     def __init__(self, cashflow_type, name, date_range=None, values=None,
                  amount=None, recurring=None, freq=None, start_dt=None,
-                 end_dt=None, outflow=False):
+                 end_dt=None, outflow=False, growth_freq=pd.DateOffset(years=1),
+                 min_growth=0.0, max_growth=0.0, growth_start_dt=None,
+                 growth_end_dt=None):
         """
         """
         self._cashflow_type = cashflow_type
@@ -32,7 +35,11 @@ class CashFlow():
         )
         self._values = self._initial_values # We may want to change values, e.g. growth in salary/expenses, but want to still have a record of original _values
         self._outflow = outflow
-
+        self.growth_freq = growth_freq
+        self.min_growth = min_growth
+        self.max_growth = max_growth
+        self.growth_start_dt = growth_start_dt
+        self.growth_end_dt = growth_end_dt
 
     @classmethod
     def from_cashflow(cls, cashflow, cashflow_type=None, name=None):
@@ -88,9 +95,10 @@ class CashFlow():
 
     @property
     def _growth_fn(self):
+        warnings.warn("Using _growth_fn implementation from CashFlow Class.")
         # Should be overwritten by subclasses where applicable;
         # Currently, return 1 is equivalent to no growth
-        return 1
+        return lambda x: 1
 
 
     def _get_growth_series(self, start_dt=None, end_dt=None,
@@ -126,8 +134,10 @@ class CashFlow():
         if return_df:
             to_return = pd.DataFrame(
                 index=self.date_range,
-                values=[self._initial_values, updated_values],
-                columns=[self.name, f'{self.name}_w_growth`']
+                data={
+                    self.name: self._initial_values,
+                    f'{self.name}_w_growth': updated_values.values
+                    }
                 )
         else:
             to_return = updated_values

@@ -9,7 +9,9 @@ import gameplan.helpers as hp
 
 class IncomeStream(CashFlow):
     def __init__(self, income_type, amount=None, freq=None, start_dt=None,
-                 end_dt=None, date_range=None, values=None, tax_rate=0.0):
+                 end_dt=None, date_range=None, values=None, tax_rate=0.0,
+                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
         super().__init__(
             cashflow_type='income',
             name=income_type,
@@ -20,7 +22,13 @@ class IncomeStream(CashFlow):
             date_range=date_range,
             values=values,
             recurring=True,
-            outflow=False
+            outflow=False,
+            growth_freq=growth_freq,
+            min_growth=min_growth,
+            max_growth=max_growth,
+            growth_start_dt=growth_start_dt,
+            growth_end_dt=growth_end_dt
+
         )
         self.tax_rate = tax_rate
 
@@ -46,17 +54,18 @@ class Salary(IncomeStream):
             freq=payday_freq,
             start_dt=start_dt,
             end_dt=end_dt,
-            tax_rate=tax_rate
+            tax_rate=tax_rate,
+            growth_freq=growth_freq,
+            min_growth=min_growth,
+            max_growth=max_growth,
+            growth_start_dt=growth_start_dt,
+            growth_end_dt=growth_end_dt
         )
         self.deductions = CashFlowCollection(
             objects={},
             totals_col_label='total_deductions'
             )
-        self.growth_freq = growth_freq
-        self.min_growth = min_growth
-        self.max_growth = max_growth
-        self.growth_start_dt = growth_start_dt
-        self.growth_end_dt = growth_end_dt
+
 
 
     def _create_deduction(self, label, amt=None, pct=None):
