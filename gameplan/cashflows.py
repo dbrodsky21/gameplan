@@ -12,7 +12,7 @@ class CashFlow():
                  amount=None, recurring=None, freq=None, start_dt=None,
                  end_dt=None, outflow=False, growth_freq=pd.DateOffset(years=1),
                  min_growth=0.0, max_growth=0.0, growth_start_dt=None,
-                 growth_end_dt=None):
+                 growth_end_dt=None, incorporate_growth=False, **kwargs):
         """
         """
         self._cashflow_type = cashflow_type
@@ -40,6 +40,8 @@ class CashFlow():
         self.max_growth = max_growth
         self.growth_start_dt = growth_start_dt
         self.growth_end_dt = growth_end_dt
+        if incorporate_growth:
+            self.update_values_with_growth()
 
     @classmethod
     def from_cashflow(cls, cashflow, cashflow_type=None, name=None):

@@ -9,7 +9,8 @@ class Expense(CashFlow):
     def __init__(self, expense_type, amount=None, recurring=None, start_dt=None,
                  freq=None, end_dt=None, date_range=None, values=None, pretax=False,
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 incorporate_growth=True, **kwargs):
         super().__init__(
             cashflow_type='expense',
             name=expense_type,
@@ -25,7 +26,9 @@ class Expense(CashFlow):
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
-            growth_end_dt=growth_end_dt
+            growth_end_dt=growth_end_dt,
+            incorporate_growth=incorporate_growth,
+            **kwargs
         )
         self.pretax=pretax
 
@@ -60,7 +63,8 @@ class Rent(Expense):
     def __init__(self, amount, start_dt=pd.datetime.today(), freq='MS',
                  end_dt=pd.datetime.today() + pd.DateOffset(years=20),
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 **kwargs):
         super().__init__(
             expense_type='rent',
             amount=amount,
@@ -72,7 +76,8 @@ class Rent(Expense):
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
-            growth_end_dt=growth_end_dt
+            growth_end_dt=growth_end_dt,
+            **kwargs
         )
 
 
@@ -80,7 +85,8 @@ class Utilities(Expense):
     def __init__(self, amount, start_dt=pd.datetime.today(), freq='MS',
                  end_dt=pd.datetime.today() + pd.DateOffset(years=20),
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 **kwargs):
         super().__init__(
             expense_type='utilities',
             amount=amount,
@@ -92,7 +98,8 @@ class Utilities(Expense):
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
-            growth_end_dt=growth_end_dt
+            growth_end_dt=growth_end_dt,
+            **kwargs
         )
 
 

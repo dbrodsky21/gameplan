@@ -11,7 +11,8 @@ class IncomeStream(CashFlow):
     def __init__(self, income_type, amount=None, freq=None, start_dt=None,
                  end_dt=None, date_range=None, values=None, tax_rate=0.0,
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 incorporate_growth=True, **kwargs):
         super().__init__(
             cashflow_type='income',
             name=income_type,
@@ -27,8 +28,9 @@ class IncomeStream(CashFlow):
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
-            growth_end_dt=growth_end_dt
-
+            growth_end_dt=growth_end_dt,
+            incorporate_growth=incorporate_growth,
+            **kwargs
         )
         self.tax_rate = tax_rate
 
@@ -37,7 +39,8 @@ class Salary(IncomeStream):
     def __init__(self, paycheck_amt, payday_freq, next_paycheck_dt=None,
                  last_paycheck_dt=None, tax_rate=0.0,
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 **kwargs):
 
         start_dt = (
             next_paycheck_dt if next_paycheck_dt
@@ -59,7 +62,8 @@ class Salary(IncomeStream):
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
-            growth_end_dt=growth_end_dt
+            growth_end_dt=growth_end_dt,
+            **kwargs
         )
         self.deductions = CashFlowCollection(
             objects={},
@@ -162,47 +166,6 @@ class Salary(IncomeStream):
             growth_fn=growth_fn if growth_fn else self._growth_fn
         )
 
-
-
-
-
-    # #generic
-    # def update_values_with_growth(self, **kwargs):
-    #     initial_series = pd.Series(self._initial_values, index=self.date_range)
-    #     growth_series = self.get_growth_series(**kwargs)
-    #     updated_values = initial_series.multiply(growth_series, axis=0)
-    #     self._values = updated_values
-
-
-    # @staticmethod
-    # def get_growth_factor(lower=-1, upper=1, dist=np.random.uniform):
-    #     # Placeholder; will want better logic around distributions
-    #     return dist(lower, upper)
-    #
-    #
-    # def get_growth_series(self, start_dt=None, update_freq_weeks=52,
-    #                       growth_factor_range=(-1.0, 1.0)):
-    #     index = (
-    #         self.cash_flows_df
-    #         [start_dt:]
-    #         .asfreq(pd.offsets.Week(n=update_freq_weeks))
-    #         .index
-    #     )
-    #     growth = (
-    #         pd.Series(index=index)
-    #         .apply(
-    #             lambda x: 1 + Salary.get_growth_factor(*growth_factor_range)
-    #         )
-    #     )
-    #     growth_series = (
-    #         growth
-    #         .reindex_like(self.cash_flows_df)
-    #         .fillna(1)
-    #         .cumprod()
-    #     )
-    #     return growth_series
-    #
-    #
 
 class IncomeStreams(CashFlowCollection):
     def __init__(self, income_streams={}):

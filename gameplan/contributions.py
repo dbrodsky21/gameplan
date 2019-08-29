@@ -8,7 +8,7 @@ from gameplan.collections import CashFlowCollection
 class Contribution(CashFlow):
     def __init__(self, contribution_label, date_range=None, values=None,
                  amount=None, recurring=None, freq=None, start_dt=None,
-                 end_dt=None):
+                 end_dt=None, incorporate_growth=False):
         super().__init__(
             cashflow_type='contribution',
             name=contribution_label,
@@ -19,7 +19,8 @@ class Contribution(CashFlow):
             freq=freq,
             start_dt=start_dt,
             end_dt=end_dt,
-            outflow=False
+            outflow=False,
+            incorporate_growth=incorporate_growth
         )
 
     @classmethod
@@ -37,7 +38,7 @@ class Contribution(CashFlow):
 class Deduction(CashFlow):
     def __init__(self, deduction_label, date_range=None, values=None,
                  amount=None, recurring=None, freq=None, start_dt=None,
-                 end_dt=None):
+                 end_dt=None, incorporate_growth=False):
         super().__init__(
             cashflow_type='deduction',
             name=deduction_label,
@@ -48,7 +49,8 @@ class Deduction(CashFlow):
             freq=freq,
             start_dt=start_dt,
             end_dt=end_dt,
-            outflow=True
+            outflow=True,
+            incorporate_growth=incorporate_growth
         )
 
     @classmethod
