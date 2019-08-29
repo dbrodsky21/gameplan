@@ -129,8 +129,9 @@ class Salary(IncomeStream):
     @property
     def _growth_fn(self):
         # Placeholder; will want better logic around distributions
-        grwth = np.random.uniform(low=self.min_growth, high=self.max_growth)
-        return 1 + grwth
+        grwth = lambda x: 1 + np.random.uniform(low=self.min_growth,
+                                                high=self.max_growth)
+        return grwth
 
 
     def get_growth_path(self, return_df=False, start_dt=None, end_dt=None,

@@ -102,7 +102,7 @@ class CashFlow():
                                           freq=growth_freq)
         growth_fn = growth_fn if growth_fn else self._growth_fn
         growth_factors = pd.Series(index=growth_date_range).apply(
-            lambda x: growth_fn
+            growth_fn
             )
         full_index = pd.DatetimeIndex.union(
             growth_date_range,
