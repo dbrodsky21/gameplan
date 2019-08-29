@@ -27,9 +27,10 @@ class CashFlow():
             self.freq=freq
 
         self.amount = amount
-        self._values = values if values is not None else (
+        self._initial_values = values if values is not None else (
             [amount] * len(self.date_range)
         )
+        self._values = self._initial_values # We may want to change values, e.g. growth in salary/expenses, but want to still have a record of original _values
         self._outflow = outflow
 
 
@@ -83,3 +84,56 @@ class CashFlow():
             chart_type = 'bar'
 
         to_plt.plot(kind=chart_type, **kwargs)
+
+
+    @property
+    def _growth_fn(self):
+        # Should be overwritten by subclasses where applicable;
+        # Currently, return 1 is equivalent to no growth
+        return 1
+
+
+    def _get_growth_series(self, start_dt=None, end_dt=None,
+                           growth_freq=None, growth_fn=None):
+        start_dt = start_dt if start_dt else self.start_dt
+        end_dt = end_dt if end_dt else self.end_dt
+        growth_freq = growth_freq if growth_freq else self.growth_freq
+        growth_date_range = pd.date_range(start=start_dt, end=end_dt,
+                                          freq=growth_freq)
+        growth_fn = growth_fn if growth_fn else self._growth_fn
+        growth_factors = pd.Series(index=growth_date_range).apply(
+            lambda x: growth_fn
+            )
+        full_index = pd.DatetimeIndex.union(
+            growth_date_range,
+            self.date_range
+        )
+        growth_series = (
+            growth_factors
+            .reindex(full_index, fill_value=1)
+            .cumprod()
+        )
+
+        # Algin the series of growth factors w/ original date_range
+        aligned_growth_series = growth_series.resample(self.freq).pad()
+
+        return aligned_growth_series
+
+    def get_growth_path(self, return_df=False, **kwargs):
+        initial_series = pd.Series(self._initial_values, index=self.date_range)
+        growth_series = self._get_growth_series(**kwargs)
+        updated_values = initial_series.multiply(growth_series, axis=0)
+        if return_df:
+            to_return = pd.DataFrame(
+                index=self.date_range,
+                values=[self._initial_values, updated_values],
+                columns=[self.name, f'{self.name}_w_growth`']
+                )
+        else:
+            to_return = updated_values
+
+        return to_return
+
+    def update_values_with_growth(self, **kwargs):
+        updated_values = self.get_growth_path(**kwargs)
+        self._values = updated_values

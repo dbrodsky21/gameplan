@@ -4,6 +4,7 @@ import numpy as np
 from gameplan.cashflows import CashFlow
 from gameplan.collections import CashFlowCollection
 from gameplan.contributions import Deduction
+import gameplan.helpers as hp
 
 
 class IncomeStream(CashFlow):
@@ -26,7 +27,9 @@ class IncomeStream(CashFlow):
 
 class Salary(IncomeStream):
     def __init__(self, paycheck_amt, payday_freq, next_paycheck_dt=None,
-                 last_paycheck_dt=None, tax_rate=0.0):
+                 last_paycheck_dt=None, tax_rate=0.0,
+                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
+                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None):
 
         start_dt = (
             next_paycheck_dt if next_paycheck_dt
@@ -49,6 +52,11 @@ class Salary(IncomeStream):
             objects={},
             totals_col_label='total_deductions'
             )
+        self.growth_freq = growth_freq
+        self.min_growth = min_growth
+        self.max_growth = max_growth
+        self.growth_start_dt = growth_start_dt
+        self.growth_end_dt = growth_end_dt
 
 
     def _create_deduction(self, label, amt=None, pct=None):
@@ -117,6 +125,74 @@ class Salary(IncomeStream):
         """TO DO: refactor"""
         return self.cash_flows_df.resample('365D').sum().values[0][0]
 
+
+    @property
+    def _growth_fn(self):
+        # Placeholder; will want better logic around distributions
+        grwth = np.random.uniform(low=self.min_growth, high=self.max_growth)
+        return 1 + grwth
+
+
+    def get_growth_path(self, return_df=False, start_dt=None, end_dt=None,
+                        growth_freq=None, growth_fn=None):
+        return super().get_growth_path(
+            return_df=return_df,
+            start_dt=start_dt if start_dt else self.growth_start_dt,
+            end_dt=end_dt if end_dt else self.growth_end_dt,
+            growth_freq=growth_freq if growth_freq else self.growth_freq,
+            growth_fn=growth_fn if growth_fn else self._growth_fn
+        )
+
+    def update_values_with_growth(self, start_dt=None, end_dt=None,
+                                  growth_freq=None, growth_fn=None):
+        super().update_values_with_growth(
+            start_dt=start_dt if start_dt else self.growth_start_dt,
+            end_dt=end_dt if end_dt else self.growth_end_dt,
+            growth_freq=growth_freq if growth_freq else self.growth_freq,
+            growth_fn=growth_fn if growth_fn else self._growth_fn
+        )
+
+
+
+
+
+    # #generic
+    # def update_values_with_growth(self, **kwargs):
+    #     initial_series = pd.Series(self._initial_values, index=self.date_range)
+    #     growth_series = self.get_growth_series(**kwargs)
+    #     updated_values = initial_series.multiply(growth_series, axis=0)
+    #     self._values = updated_values
+
+
+    # @staticmethod
+    # def get_growth_factor(lower=-1, upper=1, dist=np.random.uniform):
+    #     # Placeholder; will want better logic around distributions
+    #     return dist(lower, upper)
+    #
+    #
+    # def get_growth_series(self, start_dt=None, update_freq_weeks=52,
+    #                       growth_factor_range=(-1.0, 1.0)):
+    #     index = (
+    #         self.cash_flows_df
+    #         [start_dt:]
+    #         .asfreq(pd.offsets.Week(n=update_freq_weeks))
+    #         .index
+    #     )
+    #     growth = (
+    #         pd.Series(index=index)
+    #         .apply(
+    #             lambda x: 1 + Salary.get_growth_factor(*growth_factor_range)
+    #         )
+    #     )
+    #     growth_series = (
+    #         growth
+    #         .reindex_like(self.cash_flows_df)
+    #         .fillna(1)
+    #         .cumprod()
+    #     )
+    #     return growth_series
+    #
+    #
 
 class IncomeStreams(CashFlowCollection):
     def __init__(self, income_streams={}):
