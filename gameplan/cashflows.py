@@ -17,6 +17,8 @@ class CashFlow():
         """
         self._cashflow_type = cashflow_type
         self.name = name
+        start_dt = pd.Timestamp(start_dt) if start_dt else None
+        end_dt = pd.Timestamp(end_dt) if end_dt else None
         if date_range is not None:
             self.start_dt = date_range.min()
             self.end_dt = date_range.max()
@@ -25,7 +27,7 @@ class CashFlow():
             self.start_dt = start_dt
             self.end_dt = start_dt if not recurring else (
                 end_dt if end_dt
-                else start_dt + DEFAULT_END_DT_OFFSET
+                else start_dt + self.DEFAULT_END_DT_OFFSET
             )
             self.freq=freq
 

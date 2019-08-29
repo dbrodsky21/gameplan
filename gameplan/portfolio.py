@@ -1,5 +1,6 @@
 from gameplan.assets import Assets, CashSavings
 from gameplan.collections import Collection
+from gameplan.contributions import Contribution
 from gameplan.expenses import Expense, Expenses
 from gameplan.income_streams import IncomeStreams
 from gameplan.liabilities import Liability
@@ -46,6 +47,7 @@ class Portfolio():
         self.liabilities.add_object(liability, label, if_exists)
 
     def add_401k_contribution(self, income_stream_label, contrib_pct, employer_match=None, label='401k', if_exists='error'):
+        """employer_match should be a dict w/ keys == {'upto', 'pct_match'}"""
         #TO DO: does this need a remove method as well?
         inc = self.income_streams.contents[income_stream_label]
         inc.add_deduction(label=label, pct=contrib_pct, if_exists=if_exists)
