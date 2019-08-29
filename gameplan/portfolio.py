@@ -90,41 +90,41 @@ class Portfolio():
         cs = self.assets.contents['cash_savings']
         return cs.value_through_time
 
-    @property
-    def income_streams_from_assets(self):
-        ## You may wanna rip out the interest accumulation from CashSavings, put that as a property on Assets
-        ## or at least interest bearing assets
-        pass
-
-    @property
-    def debt_service_from_liabilities(self):
-        pass
-
-
-    @property
-    def all_cashflows(self):
-        return CashFlowCollection(
-            collection_type=CashFlow,
-            objects=[
-                self.income_streams_from_assets,
-                self.debt_service_from_liabilities,
-                self.income_streams.contents,
-                self.expenses.contents
-            ]
-        )
-
-
-    @property
-    def portfolio_pv(self): # aka net_worth?
-#         assets.pv + liabilibilities.pv + income_streams.pv + expenses.pv
-        pass
-
-
-    def simulate_portfolio_value(self):
-        pass
-
-    def plot_portfolio_value(self):
-        pass
+#     @property
+#     def income_streams_from_assets(self):
+#         ## You may wanna rip out the interest accumulation from CashSavings, put that as a property on Assets
+#         ## or at least interest bearing assets
+#         pass
+#
+#     @property
+#     def debt_service_from_liabilities(self):
+#         pass
+#
+#
+#     @property
+#     def all_cashflows(self):
+#         return CashFlowCollection(
+#             collection_type=CashFlow,
+#             objects=[
+#                 self.income_streams_from_assets,
+#                 self.debt_service_from_liabilities,
+#                 self.income_streams.contents,
+#                 self.expenses.contents
+#             ]
+#         )
+#
+#
+#     @property
+#     def portfolio_pv(self): # aka net_worth?
+# #         assets.pv + liabilibilities.pv + income_streams.pv + expenses.pv
+#         pass
+#
+#
+#     def simulate_portfolio_value(self):
+#         pass
+#
+#     def plot_portfolio_value(self):
+#         pass
 
     #TO DO: Each of these functions should probs be defined at the IncomeStream/Asset/Liability/Expense level as well?
     #TO DO: Add functionality to add objects to each of the collections (i.e. add asset/liability//etc.)
