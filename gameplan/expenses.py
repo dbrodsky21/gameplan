@@ -11,7 +11,7 @@ class Expense(CashFlow):
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
                  max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
                  incorporate_growth=True, incorporate_discounting=True,
-                 yearly_discount_rate=0.02, **kwargs):
+                 yearly_discount_rate=0.02, local_vol=0.0, **kwargs):
         super().__init__(
             cashflow_type='expense',
             name=expense_type,
@@ -31,6 +31,7 @@ class Expense(CashFlow):
             incorporate_growth=incorporate_growth,
             incorporate_discounting=incorporate_discounting,
             yearly_discount_rate=yearly_discount_rate,
+            local_vol=local_vol,
             **kwargs
         )
         self.pretax=pretax
@@ -41,6 +42,12 @@ class Expense(CashFlow):
         grwth = lambda x: 1 + np.random.uniform(low=self.min_growth,
                                                 high=self.max_growth)
         return grwth
+
+    @property
+    def _local_vol_fn(self):
+        # Should be overwritten by subclasses where applicable;
+        # Currently, returns the number itself, equivalent to no local vol
+        return lambda x: np.random.normal(x, scale=self._local_vol)
 
 
     def get_growth_path(self, return_df=False, start_dt=None, end_dt=None,

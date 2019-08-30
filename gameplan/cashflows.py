@@ -14,7 +14,7 @@ class CashFlow():
                  min_growth=0.0, max_growth=0.0, growth_start_dt=None,
                  growth_end_dt=None, incorporate_growth=False,
                  incorporate_discounting=False, yearly_discount_rate=0.02,
-                 **kwargs):
+                 local_vol=0.0, **kwargs):
         """
         """
         self._cashflow_type = cashflow_type
@@ -45,10 +45,13 @@ class CashFlow():
         self.growth_start_dt = growth_start_dt
         self.growth_end_dt = growth_end_dt
         self._yearly_discount_rate = yearly_discount_rate
+        self._incorporate_growth = incorporate_growth
+        self._incorporate_discounting = incorporate_discounting
+        self._local_vol = local_vol
         if incorporate_growth:
-            self.update_values_with_growth()
-        if incorporate_discounting:
-            self._update_values_with_discounting()
+            self.update_values_with_growth() # will update discounting as well
+        elif incorporate_discounting:
+            self._update_values_with_discounting() # if not incorp_growth but still want to incorp discounting
 
     @classmethod
     def from_cashflow(cls, cashflow, cashflow_type=None, name=None):
@@ -109,11 +112,17 @@ class CashFlow():
         # Currently, return 1 is equivalent to no growth
         return lambda x: 1
 
+    @property
+    def _local_vol_fn(self):
+        # Should be overwritten by subclasses where applicable;
+        # Currently, returns the number itself, equivalent to no local vol
+        return lambda x: np.random.normal(x, scale=0.0)
+
 
     def _get_growth_series(self, start_dt=None, end_dt=None,
                            growth_freq=None, growth_fn=None):
-        start_dt = start_dt if start_dt else self.start_dt
-        end_dt = end_dt if end_dt else self.end_dt
+        start_dt = start_dt if start_dt else self.date_range.min()
+        end_dt = end_dt if end_dt else self.date_range.max()
         growth_freq = growth_freq if growth_freq else self.growth_freq
         growth_date_range = pd.date_range(start=start_dt, end=end_dt,
                                           freq=growth_freq)
@@ -136,10 +145,17 @@ class CashFlow():
 
         return aligned_growth_series
 
+
+    def _add_local_vol(self, series, fn=None):
+        fn = fn if fn else self._local_vol_fn
+        return series.apply(fn)
+
+
     def get_growth_path(self, return_df=False, **kwargs):
         initial_series = pd.Series(self._initial_values, index=self.date_range)
         growth_series = self._get_growth_series(**kwargs)
-        updated_values = initial_series.multiply(growth_series, axis=0)
+        growth_series_with_vol = self._add_local_vol(growth_series)
+        updated_values = initial_series.multiply(growth_series_with_vol, axis=0)
         if return_df:
             to_return = pd.DataFrame(
                 index=self.date_range,
@@ -156,6 +172,8 @@ class CashFlow():
     def update_values_with_growth(self, **kwargs):
         updated_values = self.get_growth_path(**kwargs)
         self._values = updated_values
+        if self._incorporate_discounting:
+            self._update_values_with_discounting()
 
     def get_discounted_values(self, yearly_discount_rate=0.02):
         vals = self._values.copy()
