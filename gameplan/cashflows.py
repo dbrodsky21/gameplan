@@ -12,7 +12,9 @@ class CashFlow():
                  amount=None, recurring=None, freq=None, start_dt=None,
                  end_dt=None, outflow=False, growth_freq=pd.DateOffset(years=1),
                  min_growth=0.0, max_growth=0.0, growth_start_dt=None,
-                 growth_end_dt=None, incorporate_growth=False, **kwargs):
+                 growth_end_dt=None, incorporate_growth=False,
+                 incorporate_discounting=False, yearly_discount_rate=0.02,
+                 **kwargs):
         """
         """
         self._cashflow_type = cashflow_type
@@ -42,8 +44,11 @@ class CashFlow():
         self.max_growth = max_growth
         self.growth_start_dt = growth_start_dt
         self.growth_end_dt = growth_end_dt
+        self._yearly_discount_rate = yearly_discount_rate
         if incorporate_growth:
             self.update_values_with_growth()
+        if incorporate_discounting:
+            self._update_values_with_discounting()
 
     @classmethod
     def from_cashflow(cls, cashflow, cashflow_type=None, name=None):
@@ -151,3 +156,18 @@ class CashFlow():
     def update_values_with_growth(self, **kwargs):
         updated_values = self.get_growth_path(**kwargs)
         self._values = updated_values
+
+    def get_discounted_values(self, yearly_discount_rate=0.02):
+        vals = self._values.copy()
+        n_periods = (vals.index - vals.index.min())/pd.Timedelta('1Y')
+        discount_factors = pd.Series(
+            data=[(1 + yearly_discount_rate)**x for x in n_periods],
+            index=vals.index
+        )
+        discounted_vals = vals.divide(discount_factors)
+
+        return discounted_vals
+
+
+    def _update_values_with_discounting(self, **kwargs):
+        self._values = self.get_discounted_values(self._yearly_discount_rate)

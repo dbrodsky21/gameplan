@@ -12,7 +12,8 @@ class IncomeStream(CashFlow):
                  end_dt=None, date_range=None, values=None, tax_rate=0.0,
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
                  max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
-                 incorporate_growth=True, **kwargs):
+                 incorporate_growth=True, incorporate_discounting=True,
+                 yearly_discount_rate=0.02, **kwargs):
         super().__init__(
             cashflow_type='income',
             name=income_type,
@@ -30,6 +31,8 @@ class IncomeStream(CashFlow):
             growth_start_dt=growth_start_dt,
             growth_end_dt=growth_end_dt,
             incorporate_growth=incorporate_growth,
+            incorporate_discounting=incorporate_discounting,
+            yearly_discount_rate=yearly_discount_rate,
             **kwargs
         )
         self.tax_rate = tax_rate
@@ -40,7 +43,8 @@ class Salary(IncomeStream):
                  last_paycheck_dt=None, tax_rate=0.0,
                  growth_freq=pd.DateOffset(years=1), min_growth=0.0,
                  max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
-                 **kwargs):
+                 incorporate_growth=True, incorporate_discounting=True,
+                 yearly_discount_rate=0.02, **kwargs):
 
         start_dt = (
             next_paycheck_dt if next_paycheck_dt
@@ -63,6 +67,9 @@ class Salary(IncomeStream):
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
             growth_end_dt=growth_end_dt,
+            incorporate_growth=incorporate_growth,
+            incorporate_discounting=incorporate_discounting,
+            yearly_discount_rate=yearly_discount_rate,
             **kwargs
         )
         self.deductions = CashFlowCollection(
