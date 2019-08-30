@@ -1,5 +1,8 @@
+import pandas as pd
+
 from gameplan.assets import Assets, CashSavings
-from gameplan.collections import Collection
+from gameplan.cashflows import CashFlow
+from gameplan.collections import Collection, CashFlowCollection
 from gameplan.contributions import Contribution
 from gameplan.expenses import Expense, Expenses
 from gameplan.income_streams import IncomeStreams
@@ -69,7 +72,7 @@ class Portfolio():
     @property
     def net_cashflows(self):
         inflows = self.income_streams.contents['salary'].take_home_salary
-        outflows = Expenses(expenses=port.expenses.post_tax).total
+        outflows = Expenses(expenses=self.expenses.post_tax).total
         net = pd.concat([inflows, outflows], axis=1).fillna(0).sum(axis=1)
         return pd.Series(net, name='net_cashflows')
 
@@ -92,6 +95,17 @@ class Portfolio():
         cs = self.assets.contents['cash_savings']
         return cs.value_through_time
 
+    @property
+    def all_cashflows(self):
+        return CashFlowCollection(
+            collection_type=CashFlow,
+            objects=[
+                # self.income_streams_from_assets,
+                # self.debt_service_from_liabilities,
+                self.income_streams.contents,
+                self.expenses.contents
+            ]
+        )
 #     @property
 #     def income_streams_from_assets(self):
 #         ## You may wanna rip out the interest accumulation from CashSavings, put that as a property on Assets
@@ -101,19 +115,6 @@ class Portfolio():
 #     @property
 #     def debt_service_from_liabilities(self):
 #         pass
-#
-#
-#     @property
-#     def all_cashflows(self):
-#         return CashFlowCollection(
-#             collection_type=CashFlow,
-#             objects=[
-#                 self.income_streams_from_assets,
-#                 self.debt_service_from_liabilities,
-#                 self.income_streams.contents,
-#                 self.expenses.contents
-#             ]
-#         )
 #
 #
 #     @property
