@@ -75,6 +75,18 @@ class CashFlow():
         )
         return date_range
 
+
+    @property
+    def days_from_start(self):
+        """
+        Get self.date_range expressed as days from start_dt.
+        TO DO: Think about exposing period_resolution == '1D'
+        """
+        n_periods = [(x - self.date_range.min())/pd.Timedelta('1D')
+                     for x in self.date_range]
+        return n_periods
+
+
     @property
     def cash_flows_df(self):
         """A pandas dataframe representing the cashflows from the income stream.
