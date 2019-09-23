@@ -3,13 +3,14 @@ import numpy as np
 
 from gameplan.cashflows import CashFlow
 from gameplan.collections import CashFlowCollection
-
+from gameplan.growth_series import GrowthSeries, LogisticGrowth, StochasticGrowth
 
 class Expense(CashFlow):
     def __init__(self, expense_type, amount=None, recurring=None, start_dt=None,
                  freq=None, end_dt=None, date_range=None, values=None, pretax=False,
-                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 growth_series=GrowthSeries, growth_per_period_fn=None,
+                 growth_freq=pd.DateOffset(years=1), min_growth=None,
+                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
                  incorporate_growth=True, incorporate_discounting=True,
                  yearly_discount_rate=0.02, local_vol=0.0, **kwargs):
         super().__init__(
@@ -23,6 +24,8 @@ class Expense(CashFlow):
             date_range=date_range,
             values=values,
             outflow=True,
+            growth_series = growth_series,
+            growth_per_period_fn=growth_per_period_fn,
             growth_freq=growth_freq,
             min_growth=min_growth,
             max_growth=max_growth,
@@ -36,44 +39,21 @@ class Expense(CashFlow):
         )
         self.pretax=pretax
 
-    @property
-    def _growth_fn(self):
-        # Placeholder; will want better logic around distributions
-        grwth = lambda x: 1 + np.random.uniform(low=self.min_growth,
-                                                high=self.max_growth)
-        return grwth
 
     @property
     def _local_vol_fn(self):
-        # Should be overwritten by subclasses where applicable;
-        # Currently, returns the number itself, equivalent to no local vol
-        return lambda x: np.random.normal(x, scale=self._local_vol)
+        # Normal dist w/ std as % of mean value, based on self._local_vol
+        return lambda x: np.random.normal(x, scale=x*self._local_vol)
 
-
-    def get_growth_path(self, return_df=False, start_dt=None, end_dt=None,
-                        growth_freq=None, growth_fn=None):
-        return super().get_growth_path(
-            return_df=return_df,
-            start_dt=start_dt if start_dt else self.growth_start_dt,
-            end_dt=end_dt if end_dt else self.growth_end_dt,
-            growth_freq=growth_freq if growth_freq else self.growth_freq,
-            growth_fn=growth_fn if growth_fn else self._growth_fn
-        )
-
-    def update_values_with_growth(self, start_dt=None, end_dt=None,
-                                  growth_freq=None, growth_fn=None):
-        super().update_values_with_growth(
-            start_dt=start_dt if start_dt else self.growth_start_dt,
-            end_dt=end_dt if end_dt else self.growth_end_dt,
-            growth_freq=growth_freq if growth_freq else self.growth_freq,
-            growth_fn=growth_fn if growth_fn else self._growth_fn
-        )
 
 class Rent(Expense):
     def __init__(self, amount, start_dt=pd.datetime.today(), freq='MS',
                  end_dt=pd.datetime.today() + pd.DateOffset(years=20),
-                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 growth_series=LogisticGrowth,
+                 growth_points_to_fit=[(0,1), (5*365, 1.75), (10*365, 2.25)],
+                 growth_per_period_fn=None,
+                 growth_freq=pd.DateOffset(years=1), min_growth=None,
+                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
                  **kwargs):
         super().__init__(
             expense_type='rent',
@@ -82,11 +62,15 @@ class Rent(Expense):
             start_dt=start_dt,
             freq=freq,
             end_dt=end_dt,
+            growth_series = growth_series,
+            growth_per_period_fn=growth_per_period_fn,
             growth_freq=growth_freq,
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
             growth_end_dt=growth_end_dt,
+            addtl_growth_params=dict(points_to_fit=growth_points_to_fit),
+            local_vol=0.0,
             **kwargs
         )
 
@@ -94,9 +78,11 @@ class Rent(Expense):
 class Utilities(Expense):
     def __init__(self, amount, start_dt=pd.datetime.today(), freq='MS',
                  end_dt=pd.datetime.today() + pd.DateOffset(years=20),
-                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
-                 **kwargs):
+                 growth_series=StochasticGrowth,
+                 growth_per_period_fn=lambda x: .0,
+                 growth_freq=pd.DateOffset(years=1), min_growth=None,
+                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
+                 local_vol=0.15, **kwargs):
         super().__init__(
             expense_type='utilities',
             amount=amount,
@@ -104,11 +90,14 @@ class Utilities(Expense):
             start_dt=start_dt,
             freq=freq,
             end_dt=end_dt,
+            growth_series = growth_series,
+            growth_per_period_fn=growth_per_period_fn,
             growth_freq=growth_freq,
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
             growth_end_dt=growth_end_dt,
+            local_vol=local_vol,
             **kwargs
         )
 
