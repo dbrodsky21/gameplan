@@ -13,7 +13,8 @@ class GrowthSeries():
                  freq=pd.DateOffset(years=1),
                  growth_per_period_fn=None,
                  min_val=0,
-                 max_val=None):
+                 max_val=None,
+                 **kwargs):
 
         if date_range is not None:
             self.start_dt = date_range.min()
@@ -70,7 +71,7 @@ class StochasticGrowth(GrowthSeries):
     def __init__(self, date_range=None, start_dt=None, end_dt=None,
                  freq=pd.DateOffset(years=1),
                  growth_per_period_fn=lambda x: np.random.uniform(0.01, 0.05),
-                 min_val=0, max_val=None):
+                 min_val=0, max_val=None, **kwargs):
         super().__init__(
             date_range=date_range,
             start_dt=start_dt,
@@ -88,13 +89,16 @@ class LogisticGrowth(GrowthSeries):
                  growth_fn=logistic_fn,
                  parameter_bounds=([0, 0, 0],  np.inf),
                  points_to_fit=[(0, 1)],
+                 min_val=None,
                  max_val=None,
+                 **kwargs
                 ):
         super().__init__(
             date_range=date_range,
             start_dt=start_dt,
             end_dt=end_dt,
             freq=freq,
+            min_val=min_val,
             max_val=max_val
         )
         self.growth_fn=growth_fn

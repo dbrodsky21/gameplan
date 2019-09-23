@@ -14,7 +14,7 @@ class CashFlow():
                  end_dt=None, outflow=False, growth_series=GrowthSeries,
                  growth_freq=pd.DateOffset(years=1), min_growth=None,
                  max_growth=None, growth_start_dt=None, growth_end_dt=None,
-                 growth_per_period_fn=None,
+                 growth_per_period_fn=None, addtl_growth_params={},
                  incorporate_growth=False, incorporate_discounting=False,
                  yearly_discount_rate=0.02, local_vol=0.0, **kwargs):
         """
@@ -47,7 +47,8 @@ class CashFlow():
             freq=growth_freq or self.freq,
             min_val=min_growth,
             max_val=max_growth,
-            growth_per_period_fn=growth_per_period_fn
+            growth_per_period_fn=growth_per_period_fn or (lambda x: 0),
+            **addtl_growth_params
         )
         self._yearly_discount_rate = yearly_discount_rate
         self._incorporate_growth = incorporate_growth
