@@ -4,14 +4,16 @@ import scipy
 import warnings
 
 import gameplan.helpers as hp
-
+from gameplan.growth_funcs import logistic_fn
 
 class GrowthSeries():
     DEFAULT_END_DT_OFFSET = pd.DateOffset(years=20)
 
     def __init__(self, date_range=None, start_dt=None, end_dt=None,
-                 freq=pd.DateOffset(years=1), growth_per_period_fn=lambda x: 0,
-                 min_val=0, max_val=None):
+                 freq=pd.DateOffset(years=1),
+                 growth_per_period_fn=None,
+                 min_val=0,
+                 max_val=None):
 
         if date_range is not None:
             self.start_dt = date_range.min()
@@ -23,7 +25,7 @@ class GrowthSeries():
                            else start_dt + self.DEFAULT_END_DT_OFFSET)
             self.freq=freq
 
-        self.growth_per_period_fn = growth_per_period_fn
+        self.growth_per_period_fn = growth_per_period_fn or (lambda x: 0)
         self.min_val = min_val
         self.max_val = max_val
 
