@@ -4,14 +4,16 @@ import numpy as np
 from gameplan.cashflows import CashFlow
 from gameplan.collections import CashFlowCollection
 from gameplan.contributions import Deduction
+from gameplan.growth_series import StochasticGrowth
 import gameplan.helpers as hp
 
 
 class IncomeStream(CashFlow):
     def __init__(self, income_type, amount=None, freq=None, start_dt=None,
                  end_dt=None, date_range=None, values=None, tax_rate=0.0,
-                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 growth_series=None, growth_per_period_fn=None,
+                 growth_freq=pd.DateOffset(years=1), min_growth=None,
+                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
                  incorporate_growth=True, incorporate_discounting=True,
                  yearly_discount_rate=0.02, **kwargs):
         super().__init__(
@@ -25,11 +27,13 @@ class IncomeStream(CashFlow):
             values=values,
             recurring=True,
             outflow=False,
+            growth_series = growth_series,
+            growth_start_dt=growth_start_dt,
+            growth_end_dt=growth_end_dt,
             growth_freq=growth_freq,
             min_growth=min_growth,
             max_growth=max_growth,
-            growth_start_dt=growth_start_dt,
-            growth_end_dt=growth_end_dt,
+            growth_per_period_fn=growth_per_period_fn,
             incorporate_growth=incorporate_growth,
             incorporate_discounting=incorporate_discounting,
             yearly_discount_rate=yearly_discount_rate,
@@ -41,8 +45,10 @@ class IncomeStream(CashFlow):
 class Salary(IncomeStream):
     def __init__(self, paycheck_amt, payday_freq, next_paycheck_dt=None,
                  last_paycheck_dt=None, tax_rate=0.0,
-                 growth_freq=pd.DateOffset(years=1), min_growth=0.0,
-                 max_growth=0.0, growth_start_dt=None, growth_end_dt=None,
+                 growth_series=StochasticGrowth,
+                 growth_per_period_fn=lambda x: np.random.uniform(low=0.0, high=0.1),
+                 growth_freq=pd.DateOffset(years=1), min_growth=None,
+                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
                  incorporate_growth=True, incorporate_discounting=True,
                  yearly_discount_rate=0.02, **kwargs):
 
@@ -62,11 +68,13 @@ class Salary(IncomeStream):
             start_dt=start_dt,
             end_dt=end_dt,
             tax_rate=tax_rate,
+            growth_series=growth_series,
             growth_freq=growth_freq,
             min_growth=min_growth,
             max_growth=max_growth,
             growth_start_dt=growth_start_dt,
             growth_end_dt=growth_end_dt,
+            growth_per_period_fn=growth_per_period_fn,
             incorporate_growth=incorporate_growth,
             incorporate_discounting=incorporate_discounting,
             yearly_discount_rate=yearly_discount_rate,
@@ -144,34 +152,6 @@ class Salary(IncomeStream):
     def annualized_salary(self):
         """TO DO: refactor"""
         return self.cash_flows_df.resample('365D').sum().values[0][0]
-
-
-    @property
-    def _growth_fn(self):
-        # Placeholder; will want better logic around distributions
-        grwth = lambda x: 1 + np.random.uniform(low=self.min_growth,
-                                                high=self.max_growth)
-        return grwth
-
-
-    def get_growth_path(self, return_df=False, start_dt=None, end_dt=None,
-                        growth_freq=None, growth_fn=None):
-        return super().get_growth_path(
-            return_df=return_df,
-            start_dt=start_dt if start_dt else self.growth_start_dt,
-            end_dt=end_dt if end_dt else self.growth_end_dt,
-            growth_freq=growth_freq if growth_freq else self.growth_freq,
-            growth_fn=growth_fn if growth_fn else self._growth_fn
-        )
-
-    def update_values_with_growth(self, start_dt=None, end_dt=None,
-                                  growth_freq=None, growth_fn=None):
-        super().update_values_with_growth(
-            start_dt=start_dt if start_dt else self.growth_start_dt,
-            end_dt=end_dt if end_dt else self.growth_end_dt,
-            growth_freq=growth_freq if growth_freq else self.growth_freq,
-            growth_fn=growth_fn if growth_fn else self._growth_fn
-        )
 
 
 class IncomeStreams(CashFlowCollection):
