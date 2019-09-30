@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import scipy
+from typing import Optional, List
 import warnings
 
 import gameplan.helpers as hp
-from gameplan.growth_funcs import logistic_fn
+from gameplan.growth_funcs import logistic_fn, exponential_fn
 
 class GrowthSeries():
     DEFAULT_END_DT_OFFSET = pd.DateOffset(years=20)
@@ -83,12 +84,12 @@ class StochasticGrowth(GrowthSeries):
         )
 
 
-class LogisticGrowth(GrowthSeries):
-    def __init__(self, date_range=None, start_dt=None, end_dt=None,
+class FittedGrowthSeries(GrowthSeries):
+    def __init__(self, growth_fn, date_range=None, start_dt=None, end_dt=None,
                  freq=pd.DateOffset(years=1),
-                 growth_fn=logistic_fn,
-                 parameter_bounds=([0, 0, 0],  np.inf),
+                 parameter_bounds=None,
                  points_to_fit=[(0, 1)],
+                 initial_param_guesses=None,
                  min_val=None,
                  max_val=None,
                  **kwargs
@@ -101,15 +102,11 @@ class LogisticGrowth(GrowthSeries):
             min_val=min_val,
             max_val=max_val
         )
-        self.growth_fn=growth_fn
-        self.growth_param_bounds=parameter_bounds
-        self.points_to_fit=points_to_fit
+        self.growth_fn = growth_fn
+        self.growth_param_bounds = parameter_bounds
+        self.points_to_fit = points_to_fit
+        self.initial_param_guesses = initial_param_guesses
 
-    @property
-    def initial_param_guesses(self):
-        max_y_pt = max([y for x, y in self.points_to_fit])
-        max_y = self.max_val or max_y_pt
-        return [max_y, 0, 0]
 
     def add_points_to_fit(self, points: [(float, float)], return_pts=False):
         self.points_to_fit = np.unique(self.points_to_fit + points, axis=0)
@@ -140,15 +137,65 @@ class LogisticGrowth(GrowthSeries):
         return vals
 
 
+class LogisticGrowth(FittedGrowthSeries):
+    def __init__(self, date_range=None, start_dt=None, end_dt=None,
+                 freq=pd.DateOffset(years=1),
+                 growth_fn=logistic_fn,
+                 parameter_bounds=([0, 0, 0],  np.inf),
+                 points_to_fit=[(0, 1)],
+                 min_val=None,
+                 max_val=None,
+                 **kwargs
+                ):
+        super().__init__(
+            date_range=date_range,
+            start_dt=start_dt,
+            end_dt=end_dt,
+            freq=freq,
+            min_val=min_val,
+            max_val=max_val,
+            growth_fn=growth_fn,
+            parameter_bounds=parameter_bounds,
+            points_to_fit=points_to_fit
+        )
 
-# class ExponentialGrowth(GrowthSeries):
-#     def __init__(self, date_range=None, start_dt=None, end_dt=None, freq=pd.DateOffset(years=1),
-#                  growth_fn=):
-#         super().__init__(
-#             date_range
-#         )
 
-#     def get_growth_series(self):
-#         cum_vals = [1 + np.log(x/365 + 1) for x in self.n_periods_from_start]
-#         cum_vals_series = pd.Series(cum_vals, index=self.date_range)
-#         return cum_vals_series
+    @property
+    def initial_param_guesses(self):
+        return self.__initial_param_guesses
+
+
+    @initial_param_guesses.setter
+    def initial_param_guesses(self, params: Optional[List[float]]) -> None:
+        max_y_pt = max([y for x, y in self.points_to_fit])
+        max_y = self.max_val or max_y_pt
+        if params is not None:
+            params[0] = max(max_y, params[0])
+        else:
+            params = [max_y, 0, 0]
+        self.__initial_param_guesses = params
+
+
+class ExponentialGrowth(FittedGrowthSeries):
+    def __init__(self, date_range=None, start_dt=None, end_dt=None,
+                 freq=pd.DateOffset(years=1),
+                 growth_fn=exponential_fn,
+                 parameter_bounds=([0, 0],  np.inf),
+                 points_to_fit=[(0, 1)],
+                 initial_param_guesses=(1, 0),
+                 min_val=None,
+                 max_val=None,
+                 **kwargs
+                ):
+        super().__init__(
+            date_range=date_range,
+            start_dt=start_dt,
+            end_dt=end_dt,
+            freq=freq,
+            growth_fn=growth_fn,
+            parameter_bounds=parameter_bounds,
+            points_to_fit=points_to_fit,
+            initial_param_guesses=initial_param_guesses,
+            min_val=min_val,
+            max_val=max_val
+        )
