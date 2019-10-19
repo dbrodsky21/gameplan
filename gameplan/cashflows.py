@@ -80,10 +80,10 @@ class CashFlow():
 
     @classmethod
     def from_cashflow(cls,
-                      cashflow: CashFlow,
+                      cashflow, # TO DO: how do you type-hint the class itself?
                       cashflow_type: Optional[str] = None,
                       name: Optional[str] = None
-                      ) -> CashFlow:
+                      ): # TO DO: how do you type-hint the class itself?:
         cashflow_type = cashflow_type if cashflow_type is not None else cashflow._cashflow_type
         name = name if name is not None else cashflow.name
         date_range = cashflow.date_range
