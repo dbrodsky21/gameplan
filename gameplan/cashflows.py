@@ -1,5 +1,7 @@
-import pandas as pd
+from datetime import datetime
 import numpy as np
+import pandas as pd
+from typing import Callable, List, Optional, Union
 import warnings
 
 from gameplan.growth_series import GrowthSeries
@@ -9,14 +11,31 @@ import gameplan.helpers as hp
 class CashFlow():
     DEFAULT_END_DT_OFFSET = pd.DateOffset(years=20)
 
-    def __init__(self, cashflow_type, name, date_range=None, values=None,
-                 amount=None, recurring=None, freq=None, start_dt=None,
-                 end_dt=None, outflow=False, growth_series=GrowthSeries,
-                 growth_freq=pd.DateOffset(years=1), min_growth=None,
-                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
-                 growth_per_period_fn=None, addtl_growth_params={},
-                 incorporate_growth=False, incorporate_discounting=False,
-                 yearly_discount_rate=0.02, local_vol=0.0, **kwargs):
+    def __init__(self,
+                 cashflow_type: str,
+                 name: str,
+                 date_range: pd.date_range = None,
+                 values: Optional[List[float]] = None,
+                 amount: Optional[float] = None,
+                 recurring: Optional[bool] = None,
+                 freq: Optional[str] = None,
+                 start_dt: Optional[Union[str, datetime]] = None,
+                 end_dt: Optional[Union[str, datetime]] = None,
+                 outflow: bool = False,
+                 growth_series: GrowthSeries = GrowthSeries,
+                 growth_freq: pd.DateOffset = pd.DateOffset(years=1),
+                 min_growth: Optional[float] = None,
+                 max_growth: Optional[float] = None,
+                 growth_start_dt: Optional[Union[str, datetime]] = None,
+                 growth_end_dt: Optional[Union[str, datetime]] = None,
+                 growth_per_period_fn: Optional[Callable] = None,
+                 addtl_growth_params: dict = {},
+                 incorporate_growth: bool = False,
+                 incorporate_discounting: bool = False,
+                 yearly_discount_rate: float = 0.02,
+                 local_vol: float = 0.0,
+                 **kwargs
+                 ) -> None:
         """
         """
         self._cashflow_type = cashflow_type
@@ -60,7 +79,11 @@ class CashFlow():
             self._update_values_with_discounting() # if not incorp_growth but still want to incorp discounting
 
     @classmethod
-    def from_cashflow(cls, cashflow, cashflow_type=None, name=None):
+    def from_cashflow(cls,
+                      cashflow: CashFlow,
+                      cashflow_type: Optional[str] = None,
+                      name: Optional[str] = None
+                      ) -> CashFlow:
         cashflow_type = cashflow_type if cashflow_type is not None else cashflow._cashflow_type
         name = name if name is not None else cashflow.name
         date_range = cashflow.date_range
@@ -71,7 +94,7 @@ class CashFlow():
 
 
     @property
-    def date_range(self):
+    def date_range(self) -> pd.date_range:
         freq = hp.FREQ_MAP.get(self.freq, self.freq)
         date_range = pd.date_range(
             start=self.start_dt,
@@ -83,7 +106,7 @@ class CashFlow():
 
 
     @property
-    def days_from_start(self):
+    def days_from_start(self) -> List[int]:
         """
         Get self.date_range expressed as days from start_dt.
         TO DO: Think about exposing period_resolution == '1D'
@@ -94,7 +117,7 @@ class CashFlow():
 
 
     @property
-    def cash_flows_df(self):
+    def cash_flows_df(self) -> pd.DataFrame:
         """A pandas dataframe representing the cashflows from the income stream.
         """
         cash_flows = pd.DataFrame(
@@ -106,7 +129,7 @@ class CashFlow():
         return cash_flows
 
 
-    def plot_cash_flows(self, cumulative=True, **kwargs):
+    def plot_cash_flows(self, cumulative: bool = True, **kwargs) -> None:
         if cumulative:
             to_plt = (
                 self.cash_flows_df
@@ -124,13 +147,13 @@ class CashFlow():
 
 
     @property
-    def _local_vol_fn(self):
+    def _local_vol_fn(self) -> Callable:
         # Should be overwritten by subclasses where applicable;
         # Currently, returns the number itself, equivalent to no local vol
         return lambda x: np.random.normal(x, scale=0.0)
 
 
-    def _get_growth_series(self):
+    def _get_growth_series(self) -> pd.Series:
         growth_factors = self.growth_series.growth_series
         full_index = pd.DatetimeIndex.union(
             self.growth_series.date_range,
@@ -143,35 +166,17 @@ class CashFlow():
         )
         # Align the series of growth factors w/ original date_range
         aligned_growth_series = growth_series.resample(self.freq).pad()
-        """
-        start_dt = start_dt if start_dt else self.date_range.min()
-        end_dt = end_dt if end_dt else self.date_range.max()
-        growth_freq = growth_freq if growth_freq else self.growth_freq
-        growth_date_range = pd.date_range(start=start_dt, end=end_dt,
-                                          freq=growth_freq)
-        growth_fn = growth_fn if growth_fn else self._growth_fn
-        growth_factors = pd.Series(index=growth_date_range).apply(
-            growth_fn
-            )
-        full_index = pd.DatetimeIndex.union(
-            growth_date_range,
-            self.date_range
-        )
-        growth_series = (
-            growth_factors
-            .reindex(full_index, fill_value=1)
-            .cumprod()
-        )
-        """
         return aligned_growth_series
 
 
-    def _add_local_vol(self, series, fn=None):
+    def _add_local_vol(self, series: pd.Series,
+                       fn: Optional[Callable] = None
+                       ) -> pd.Series:
         fn = fn if fn else self._local_vol_fn
         return series.apply(fn)
 
 
-    def get_growth_path(self, return_df=False):
+    def get_growth_path(self, return_df: bool = False) -> Optional[pd.DataFrame]:
         initial_series = pd.Series(self._initial_values, index=self.date_range)
         growth_series = self._get_growth_series()
         growth_series_with_vol = self._add_local_vol(growth_series)
@@ -189,13 +194,14 @@ class CashFlow():
 
         return to_return
 
-    def update_values_with_growth(self):
+    def update_values_with_growth(self) -> None:
         updated_values = self.get_growth_path()
         self._values = updated_values
         if self._incorporate_discounting:
             self._update_values_with_discounting()
 
-    def get_discounted_values(self, yearly_discount_rate=0.02):
+    def get_discounted_values(self, yearly_discount_rate: float = 0.02
+                             ) -> pd.Series:
         vals = self._values.copy()
         n_periods = (vals.index - vals.index.min())/pd.Timedelta('1Y')
         discount_factors = pd.Series(
@@ -207,5 +213,5 @@ class CashFlow():
         return discounted_vals
 
 
-    def _update_values_with_discounting(self, **kwargs):
+    def _update_values_with_discounting(self, **kwargs) -> None:
         self._values = self.get_discounted_values(self._yearly_discount_rate)
