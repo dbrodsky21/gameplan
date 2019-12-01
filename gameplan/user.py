@@ -19,15 +19,15 @@ class User():
         self._income_percentile = income_percentile
 
     @property
-    def age(self):
+    def age(self) -> pd.datetime:
         return pd.datetime.today() - self.age
 
     @property
-    def income_percentile(self):
+    def income_percentile(self) -> int:
         return self._income_percentile
 
     @income_percentile.setter
-    def income_percentile(self, val):
+    def income_percentile(self, val: int) -> None:
         # TO DO: implement a get_income_percentile method to estimate
         # this based on user demographic and other info
         self._income_percentile = val
@@ -36,7 +36,7 @@ class User():
                                  growth_model: KitcesIncomeGrowthModel,
                                  start_dt: pd.datetime = pd.datetime.today(),
                                  **kwargs
-                                 ) -> None:
+                                 ) -> pd.Series:
         gm = growth_model(user_birthday=self.birthday,
                           income_percentile=self.income_percentile)
         return gm.get_growth_points_to_fit(start_dt=start_dt)
