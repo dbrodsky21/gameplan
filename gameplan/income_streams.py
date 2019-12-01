@@ -1,10 +1,12 @@
+from datetime import datetime
 import pandas as pd
 import numpy as np
+from typing import Callable, List, Optional, Union, Tuple
 
 from gameplan.cashflows import CashFlow
 from gameplan.collections import CashFlowCollection
 from gameplan.contributions import Deduction
-from gameplan.growth_series import StochasticGrowth
+from gameplan.growth_series import GrowthSeries, FittedPolynomialGrowth
 import gameplan.helpers as hp
 
 
@@ -45,12 +47,30 @@ class IncomeStream(CashFlow):
 class Salary(IncomeStream):
     def __init__(self, paycheck_amt, payday_freq, next_paycheck_dt=None,
                  last_paycheck_dt=None, tax_rate=0.0,
-                 growth_series=StochasticGrowth,
-                 growth_per_period_fn=lambda x: np.random.uniform(low=0.0, high=0.1),
-                 growth_freq=pd.DateOffset(years=1), min_growth=None,
-                 max_growth=None, growth_start_dt=None, growth_end_dt=None,
-                 incorporate_growth=True, incorporate_discounting=True,
-                 yearly_discount_rate=0.02, **kwargs):
+                 growth_series: GrowthSeries = FittedPolynomialGrowth,
+                 growth_points_to_fit: List[Tuple[int, float]] = [
+                     (0, 1.0),
+                     (285, 1.0456339114572402),
+                     (2111, 1.3136836065067592),
+                     (3937, 1.4826908041087061),
+                     (5763, 1.665289827098607),
+                     (7590, 1.7597881182518966),
+                     (9416, 1.6168499978856523),
+                     (11242, 1.4355917987788163)
+                 ],
+                 growth_per_period_fn: Optional[Callable] = None,
+                 growth_freq: Union[str, datetime] = pd.DateOffset(years=1),
+                 min_growth: Optional[float] = None,
+                 max_growth: Optional[float] = None,
+                 growth_start_dt: Optional[Union[str, datetime]] = None,
+                 growth_end_dt: Optional[Union[str, datetime]] = None,
+
+                 # growth_series=StochasticGrowth,
+                 # growth_per_period_fn=lambda x: np.random.uniform(low=0.0, high=0.1),
+                 # growth_freq=pd.DateOffset(years=1), min_growth=None,
+                 # max_growth=None, growth_start_dt=None, growth_end_dt=None,
+                 incorporate_growth=True, incorporate_discounting=False,
+                 yearly_discount_rate=0, **kwargs):
 
         start_dt = (
             next_paycheck_dt if next_paycheck_dt
@@ -75,6 +95,7 @@ class Salary(IncomeStream):
             growth_start_dt=growth_start_dt,
             growth_end_dt=growth_end_dt,
             growth_per_period_fn=growth_per_period_fn,
+            addtl_growth_params=dict(points_to_fit=growth_points_to_fit),
             incorporate_growth=incorporate_growth,
             incorporate_discounting=incorporate_discounting,
             yearly_discount_rate=yearly_discount_rate,

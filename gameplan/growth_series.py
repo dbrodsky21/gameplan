@@ -5,7 +5,7 @@ from typing import Optional, List
 import warnings
 
 import gameplan.helpers as hp
-from gameplan.growth_funcs import logistic_fn, exponential_fn
+from gameplan.growth_funcs import exponential_fn, linear_fn, logistic_fn
 
 class GrowthSeries():
     DEFAULT_END_DT_OFFSET = pd.DateOffset(years=20)
@@ -82,6 +82,53 @@ class StochasticGrowth(GrowthSeries):
             min_val=min_val,
             max_val=max_val
         )
+
+
+class FittedPolynomialGrowth(GrowthSeries):
+    def __init__(self, degree=3, date_range=None, start_dt=None, end_dt=None,
+                 freq=pd.DateOffset(years=1),
+                 # parameter_bounds=None,
+                 points_to_fit=[(0, 1)],
+                 # initial_param_guesses=None,
+                 min_val=None,
+                 max_val=None,
+                 **kwargs
+                ):
+        super().__init__(
+            date_range=date_range,
+            start_dt=start_dt,
+            end_dt=end_dt,
+            freq=freq,
+            min_val=min_val,
+            max_val=max_val
+        )
+        self.degree = degree
+        # self.growth_param_bounds = parameter_bounds
+        self.points_to_fit = points_to_fit
+        # self.initial_param_guesses = initial_param_guesses
+
+
+    def add_points_to_fit(self, points: [(float, float)], return_pts=False):
+        self.points_to_fit = np.unique(self.points_to_fit + points, axis=0)
+        if return_pts:
+            return self.points_to_fit
+
+
+    @property
+    def _fitted_polynomial(self):
+        xs = [n[0] for n in self.points_to_fit]
+        ys = [n[1] for n in self.points_to_fit]
+        # see domain param for below if fitting poorly out of sample.
+        poly = np.polynomial.polynomial.Polynomial.fit(xs, ys, deg=self.degree)
+
+        return poly
+
+
+    @property
+    def growth_per_period(self):
+        cum_vals = [self._fitted_polynomial(x) for x in self.days_from_start]
+        vals = 1 + pd.Series(cum_vals).pct_change()
+        return vals
 
 
 class FittedGrowthSeries(GrowthSeries):
@@ -174,6 +221,31 @@ class LogisticGrowth(FittedGrowthSeries):
         else:
             params = [max_y, 0, 0]
         self.__initial_param_guesses = params
+
+
+class LinearGrowth(FittedGrowthSeries):
+    def __init__(self, date_range=None, start_dt=None, end_dt=None,
+                 freq=pd.DateOffset(years=1),
+                 growth_fn=linear_fn,
+                 parameter_bounds=([0, 0],  np.inf),
+                 points_to_fit=[(0, 1)],
+                 initial_param_guesses=(0, 0),
+                 min_val=None,
+                 max_val=None,
+                 **kwargs
+                ):
+        super().__init__(
+            date_range=date_range,
+            start_dt=start_dt,
+            end_dt=end_dt,
+            freq=freq,
+            growth_fn=growth_fn,
+            parameter_bounds=parameter_bounds,
+            points_to_fit=points_to_fit,
+            initial_param_guesses=initial_param_guesses,
+            min_val=min_val,
+            max_val=max_val
+        )
 
 
 class ExponentialGrowth(FittedGrowthSeries):
