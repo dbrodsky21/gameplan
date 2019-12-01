@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Callable, List, Optional, Union
 import warnings
 
-from gameplan.growth_series import GrowthSeries
+from gameplan.growth.growth_series import GrowthSeries
 import gameplan.helpers as hp
 
 

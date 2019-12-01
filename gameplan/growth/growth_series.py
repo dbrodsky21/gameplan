@@ -5,7 +5,7 @@ from typing import Optional, List
 import warnings
 
 import gameplan.helpers as hp
-from gameplan.growth_funcs import exponential_fn, linear_fn, logistic_fn
+from gameplan.growth.growth_funcs import exponential_fn, linear_fn, logistic_fn
 
 class GrowthSeries():
     DEFAULT_END_DT_OFFSET = pd.DateOffset(years=20)
