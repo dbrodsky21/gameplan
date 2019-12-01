@@ -21,7 +21,7 @@ class KitcesIncomeGrowthModel():
             poly_degree=self._degree_poly_to_fit
             )
 
-    def get_growth_points_to_fit(self, start_dt=pd.datetime.today(), end_dt=None):
+    def get_growth_points_to_fit(self, start_dt=pd.datetime.today()):
         age_at_ref_date = (start_dt - self.user.birthday).days
         growth_level_at_ref_date = self.fitted_polynomial(age_at_ref_date)
         new_growth_series = self.growth_series.loc[age_at_ref_date:]
@@ -29,7 +29,7 @@ class KitcesIncomeGrowthModel():
         new_growth_series = new_growth_series.divide(growth_level_at_ref_date)
         new_growth_series.index = new_growth_series.index - age_at_ref_date
 
-        return new_growth_series
+        return new_growth_series.sort_index()
 
     @property
     def income_percentile(self):
