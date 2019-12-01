@@ -2,17 +2,16 @@ import numpy as np
 import pandas as pd
 
 from gameplan.growth.data_sources import KitcesData
-from gameplan.user import User
 
 
 class KitcesIncomeGrowthModel():
     def __init__(self,
-                 user: User,
+                 user_birthday: pd.datetime,
                  data_source: KitcesData = KitcesData(),
                  income_percentile: int = 50,
                  degree_poly_to_fit: int = 3,
                 ) -> None:
-        self.user = user
+        self.user_birthday = user_birthday
         self.data_source = data_source
         self._income_percentile = income_percentile
         self.growth_series = self._get_relevant_series()
@@ -22,7 +21,7 @@ class KitcesIncomeGrowthModel():
             )
 
     def get_growth_points_to_fit(self, start_dt=pd.datetime.today()):
-        age_at_ref_date = (start_dt - self.user.birthday).days
+        age_at_ref_date = (start_dt - self.user_birthday).days
         growth_level_at_ref_date = self.fitted_polynomial(age_at_ref_date)
         new_growth_series = self.growth_series.loc[age_at_ref_date:]
         new_growth_series.loc[age_at_ref_date] = growth_level_at_ref_date
