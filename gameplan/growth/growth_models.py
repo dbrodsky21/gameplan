@@ -29,8 +29,9 @@ class KitcesIncomeGrowthModel():
         new_growth_series.loc[age_at_ref_date] = growth_level_at_ref_date
         new_growth_series = new_growth_series.divide(growth_level_at_ref_date)
         new_growth_series.index = new_growth_series.index - age_at_ref_date
+        new_growth_series.sort_index(inplace=True)
 
-        return new_growth_series.sort_index()
+        return list(zip(new_growth_series.index, new_growth_series.values))
 
     @property
     def income_percentile(self) -> int:
