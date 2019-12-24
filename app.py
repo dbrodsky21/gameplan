@@ -1,4 +1,4 @@
-import os
+# import os
 
 import pandas_datareader.data as web
 import datetime
@@ -7,15 +7,15 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
-import sys
-print("cwd: " + os.getcwd())
-print("sys.path: ")
-print(sys.path)
-sys.path.append(os.getcwd()+'/gameplan')
-print(sys.path)
-sys.path.append('/app/gameplan')
-print("sys.path:")
-print(sys.path)
+# import sys
+# print("cwd: " + os.getcwd())
+# print("sys.path: ")
+# print(sys.path)
+# sys.path.append(os.getcwd()+'/gameplan')
+# print(sys.path)
+# sys.path.append('/app/gameplan')
+# print("sys.path:")
+# print(sys.path)
 
 from gameplan.growth.income_percentile_estimate import get_working_population_data
 
