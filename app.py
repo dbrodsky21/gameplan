@@ -8,7 +8,14 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 import sys
+print(sys.path)
 sys.path.append('./gameplan')
+print(sys.path)
+try:
+    sys.path.append('$PWD/gameplan')
+    print(sys.path)
+except:
+    print('couldnt append w/ $PWD')
 
 from gameplan.growth.income_percentile_estimate import get_working_population_data
 
