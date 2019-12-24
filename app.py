@@ -12,7 +12,7 @@ print(f"sys.path: {sys.path}")
 
 import os
 try:
-    print(f"PYTHONPATH: {os.environ['PYTHONPATH']}"")
+    print(f"PYTHONPATH: {os.environ['PYTHONPATH']}")
 except:
     print('no PYTHONPATH found')
 
