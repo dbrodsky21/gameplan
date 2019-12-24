@@ -9,14 +9,13 @@ from dash.dependencies import Input, Output, State
 
 import sys
 print("cwd: " + os.getcwd())
-print("sys.path" + sys.path)
+print("sys.path: ")
+print(sys.path)
 sys.path.append(os.getcwd()+'/gameplan')
 print(sys.path)
-try:
-    sys.path.append('$PWD/gameplan')
-    print(sys.path)
-except:
-    print('couldnt append w/ $PWD')
+sys.path.append('/app/gameplan')
+print("sys.path:")
+print(sys.path)
 
 from gameplan.growth.income_percentile_estimate import get_working_population_data
 
