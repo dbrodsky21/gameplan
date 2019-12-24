@@ -7,6 +7,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
+from os import listdir
+print(listdir('.'))
+
 from gameplan.growth.income_percentile_estimate import get_working_population_data
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
