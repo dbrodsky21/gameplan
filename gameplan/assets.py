@@ -5,7 +5,7 @@ import random
 import fecon236.prob.sim as fe_sim
 
 from gameplan.cashflows import CashFlow
-from gameplan.collections import CashFlowCollection, Collection
+from gameplan.gp_collections import CashFlowCollection, Collection
 from gameplan.contributions import Contribution
 
 

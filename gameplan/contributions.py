@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from gameplan.cashflows import CashFlow
-from gameplan.collections import CashFlowCollection
+from gameplan.gp_collections import CashFlowCollection
 
 
 class Contribution(CashFlow):

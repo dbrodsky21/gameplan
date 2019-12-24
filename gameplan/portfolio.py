@@ -2,7 +2,7 @@ import pandas as pd
 
 from gameplan.assets import Assets, CashSavings
 from gameplan.cashflows import CashFlow
-from gameplan.collections import Collection, CashFlowCollection
+from gameplan.gp_collections import Collection, CashFlowCollection
 from gameplan.contributions import Contribution
 from gameplan.expenses import Expense, Expenses
 from gameplan.income_streams import IncomeStreams
@@ -130,4 +130,4 @@ class Portfolio():
 #         pass
 
     #TO DO: Each of these functions should probs be defined at the IncomeStream/Asset/Liability/Expense level as well?
-    #TO DO: Add functionality to add objects to each of the collections (i.e. add asset/liability//etc.)
+    #TO DO: Add functionality to add objects to each of the gp_collections (i.e. add asset/liability//etc.)

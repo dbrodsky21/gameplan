@@ -4,7 +4,7 @@ import numpy as np
 from typing import Callable, List, Optional, Union, Tuple
 
 from gameplan.cashflows import CashFlow
-from gameplan.collections import CashFlowCollection
+from gameplan.gp_collections import CashFlowCollection
 from gameplan.contributions import Deduction
 from gameplan.growth.growth_series import GrowthSeries, FittedPolynomialGrowth
 import gameplan.helpers as hp

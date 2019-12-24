@@ -4,7 +4,7 @@ import numpy as np
 from typing import Callable, List, Optional, Union, Tuple
 
 from gameplan.cashflows import CashFlow
-from gameplan.collections import CashFlowCollection
+from gameplan.gp_collections import CashFlowCollection
 from gameplan.growth.growth_series import GrowthSeries, LinearGrowth, LogisticGrowth, StochasticGrowth
 
 class Expense(CashFlow):
