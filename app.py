@@ -8,14 +8,19 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 import sys
-print(sys.path)
+print(f"sys.path: {sys.path}")
 
 import os
-print(os.environ['PYTHONPATH'])
+try:
+    print(f"PYTHONPATH: {os.environ['PYTHONPATH']}"")
+except:
+    print('no PYTHONPATH found')
 
 from os import listdir
-print(listdir('.'))
+print(f"listdir('.'): {listdir('.')}")
 print()
+print(f"listdir('/app': {listdir('/app'}")
+
 
 from gameplan.growth.income_percentile_estimate import get_working_population_data
 
