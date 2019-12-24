@@ -8,8 +8,9 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 import sys
-print(sys.path)
-sys.path.append('./gameplan')
+print("cwd: " + os.getcwd())
+print("sys.path" + sys.path)
+sys.path.append(os.getcwd()+'/gameplan')
 print(sys.path)
 try:
     sys.path.append('$PWD/gameplan')
