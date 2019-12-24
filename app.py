@@ -7,24 +7,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
-import sys
-print(f"sys.path: {sys.path}")
-
-import os
-try:
-    print(f"PYTHONPATH: {os.environ['PYTHONPATH']}")
-except:
-    print('no PYTHONPATH found')
-
-from os import listdir
-print(f"listdir('.'): {listdir('.')}")
-print()
-try:
-    print(f"listdir('/app'): {listdir('/app')}")
-except:
-    print("listdir /app didn't work")
-
-
 from gameplan.growth.income_percentile_estimate import get_working_population_data
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
