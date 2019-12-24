@@ -19,7 +19,10 @@ except:
 from os import listdir
 print(f"listdir('.'): {listdir('.')}")
 print()
-print(f"listdir('/app': {listdir('/app'}")
+try:
+    print(f"listdir('/app'): {listdir('/app')}")
+except:
+    print("listdir /app didn't work")
 
 
 from gameplan.growth.income_percentile_estimate import get_working_population_data
