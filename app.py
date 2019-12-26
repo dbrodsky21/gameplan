@@ -69,7 +69,7 @@ def get_fig(df, salary, dma, age_range=None, gender=None):
         align='left'
         )
     layout = go.Layout(
-        title=f"Total Income Distribution by Metro Area",
+        title=f"Total Income Distribution in {dma}",
         yaxis={
             "title": "% of Full-Time Workers Earning Up To $X Per Year",
             "range": [0, 1],
