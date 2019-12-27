@@ -150,12 +150,12 @@ INCOME_PLOTS = [
                                         ],
                                     ),
                                     dcc.Tab(
-                                        label="Income Forecast",
+                                        label="Income trajectory",
                                         children=[
                                             dcc.Loading(
                                                 id="loading-wordcloud",
                                                 children=[
-                                                    dcc.Graph(id="income-forecast-graph")
+                                                    dcc.Graph(id="income-trajectory-graph")
                                                 ],
                                                 type="default",
                                             )
@@ -303,15 +303,11 @@ def get_pctile_for_growth(x):
         x -= 1
     return np.floor(x/10)*10
 
-def get_income_forecast_fig(df, salary, dma, age_range, gender, age):
-    subset = get_cohort_subset(df, dma, age_range, gender)
-    dist = get_cdf(subset)
-    percentile = sp.percentileofscore(dist.inctot, int(salary))
-
+def get_salary_trajectory(pctile_for_growth, age, current_salary):
     user = User(
         email='placeholder',
         birthday=pd.datetime.today() - pd.DateOffset(years=age),
-        income_percentile=get_pctile_for_growth(percentile)
+        income_percentile=pctile_for_growth
         )
 
     sal_grwth_points = user.get_growth_points_to_fit(
@@ -319,13 +315,88 @@ def get_income_forecast_fig(df, salary, dma, age_range, gender, age):
         start_dt=pd.datetime.today()
     )
     s = Salary(
-        salary,
+        current_salary,
         payday_freq='Y',
         growth_points_to_fit=sal_grwth_points,
         last_paycheck_dt= pd.datetime.today() + pd.DateOffset(years=65 - age),
         tax_rate=.35
     )
-    return px.scatter(s.paycheck_df.salary.reset_index(), 'index', 'salary')
+    return s
+
+def get_growth_scenarios(percentile, age, current_salary):
+    pctile_for_growth = get_pctile_for_growth(percentile)
+    growth_scenarios = {
+        'Optimistic': {'grwth_pctile': pctile_for_growth + 10},
+        'Status Quo': {'grwth_pctile': pctile_for_growth},
+        'Pessimistic': {'grwth_pctile': pctile_for_growth - 10},
+    }
+    # We don't have an "optimistic" scenario if you're in the 90th pctile
+    if pctile_for_growth >= 90:
+        growth_scenarios.pop('Optimistic')
+    elif pctile_for_growth <= 10:
+        growth_scenarios.pop('Pessimistic')
+
+    for scn, v in growth_scenarios.items():
+        v['sal_traj'] = get_salary_trajectory(v['grwth_pctile'], age, current_salary)
+
+    return growth_scenarios
+
+
+def get_income_trajectory_fig(df, salary, dma, age_range, gender, age):
+    subset = get_cohort_subset(df, dma, age_range, gender)
+    dist = get_cdf(subset)
+    percentile = sp.percentileofscore(dist.inctot, int(salary))
+    growth_scenarios = get_growth_scenarios(percentile, age, salary)
+    bday = pd.datetime.today() - pd.DateOffset(years=age)
+    data = [
+        go.Scatter(
+            x=[
+                round((dt-bday).days/365)
+                for dt in v['sal_traj'].paycheck_df.index
+               ],
+            y=v['sal_traj'].paycheck_df.salary,
+            name=f"{scn} Growth Trajectory - {int(v['grwth_pctile'])}th percentile",
+            mode='markers+lines'
+        )
+        for scn, v in growth_scenarios.items()
+    ]
+
+    # bday = pd.datetime.today() - pd.DateOffset(years=age)
+    # date_range = growth_scenarios['Status Quo']['sal_traj'].date_range
+    # age_index = [round((dt-bday).days/365) for dt in date_range]
+    # data.append(
+    #     go.Scatter(
+    #         x=age_index,
+    #         y=[0]*len(age_index),
+    #         xaxis='x2',
+    #         visible='legendonly',
+    #         showlegend=False
+    #     )
+    # )
+
+    layout = go.Layout(
+        xaxis=go.layout.XAxis(
+            title = 'Age',
+            dtick=5,
+            # title_standoff=10,
+            # range=[min(date_range) - pd.DateOffset(years=1),
+            #        max(date_range) + pd.DateOffset(years=1)]
+        ),
+        # xaxis2=go.layout.XAxis(
+        #     title='Age',
+        #     overlaying='x',
+        #     side='top',
+        #     tickvals=[x for x in age_index if x%5 == 0 ],
+        #     range=[min(age_index) - 1, max(age_index) + 1]
+        # ),
+        yaxis=go.layout.YAxis(
+            title='Pre-Tax Income in 2019 Dollars (inflation-adjusted)'
+        ),
+        legend=go.layout.Legend(orientation='h', y=-0.2),
+    )
+
+
+    return go.Figure(data, layout)
 
 """
 #  Callbacks
@@ -363,7 +434,7 @@ def update_income_dist_figure(dma, salary, age_range, gender):
 
 
 @app.callback(
-    Output(component_id='income-forecast-graph', component_property='figure'),
+    Output(component_id='income-trajectory-graph', component_property='figure'),
     [
         Input(component_id='dma', component_property='value'),
         Input('annual_income', 'value'),
@@ -373,8 +444,8 @@ def update_income_dist_figure(dma, salary, age_range, gender):
 
     ],
 )
-def update_income_forecast_figure(dma, salary, age_range, gender, age):
-    fig = get_income_forecast_fig(
+def update_income_trajectory_figure(dma, salary, age_range, gender, age):
+    fig = get_income_trajectory_fig(
         df=working_pop,
         dma=dma,
         salary=salary,
