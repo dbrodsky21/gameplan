@@ -117,7 +117,7 @@ LEFT_COLUMN = dbc.Jumbotron(
 )
 
 INCOME_PLOTS = [
-    dbc.CardHeader(html.H5("Charts")),
+    dbc.CardHeader(id='income-charts-header'),
     dbc.Alert(
         "Not enough data to render these plots, please adjust the filters",
         id="no-data-alert",
@@ -179,12 +179,23 @@ BODY = dbc.Container(
     className="mt-12",
 )
 
-layout = html.Div(children=[NAVBAR, BODY])
+layout = html.Div(children=[BODY])
 
 """
 # Helper functions
 """
-def construct_query(dma, age_range, gender):
+def get_percentile_label(x):
+    pctile = round(x) # sp.percentile returns percentiles out of 100, not 1
+    last_digit = str(pctile)[-1]
+    suffix_dict = {
+        '1' : 'st',
+        '2' : 'nd',
+        '3' : 'rd'
+    }
+
+    return f"{pctile}{suffix_dict.get(last_digit, 'th')}"
+
+def construct_subset_query(dma, age_range, gender):
     if gender == 'All':
         gender_clause = "(sex == 'Male' | sex == 'Female')"
     else:
@@ -196,12 +207,25 @@ def construct_query(dma, age_range, gender):
         "
     return query
 
-def get_income_dist_fig(df, salary, dma, age_range, gender):
-    query = construct_query(dma, age_range, gender)
-    subset = df.query(query)
-    subset['weight'] = subset.ASECWT / subset.ASECWT.sum()
-    dist = subset.sort_values('inctot').loc[:, ['inctot', 'weight']]
+def get_cohort_subset(df, dma, age_range, gender):
+    query = construct_subset_query(dma, age_range, gender)
+    return df.query(query)
+
+def get_cdf(df):
+    df['weight'] = df.ASECWT / df.ASECWT.sum()
+    dist = df.sort_values('inctot').loc[:, ['inctot', 'weight']]
     dist['cdf'] = dist.weight.cumsum()
+    return dist
+
+def get_income_percentile(salary, inc_dist):
+    pass
+
+
+def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
+    subset = get_cohort_subset(df, dma, age_range, gender)
+    dist = get_cdf(subset)
+    percentile = sp.percentileofscore(dist.inctot, int(salary))
+
     fig = px.line(
         dist,
         x='inctot',
@@ -209,7 +233,7 @@ def get_income_dist_fig(df, salary, dma, age_range, gender):
         range_x=(0, 250000),
         range_y=(0,1)
         )
-    percentile = sp.percentileofscore(dist.inctot, int(salary))
+
     fig.add_scatter(
         x=[salary, salary],
         y=[0, 1],
@@ -218,7 +242,7 @@ def get_income_dist_fig(df, salary, dma, age_range, gender):
         showlegend=False
     )
     fig.add_annotation(
-        text=f'${salary:,} = {percentile:.0f}th Percentile',
+        text=f'${salary:,} = {get_percentile_label(percentile)} Percentile',
         x=salary,
         y=percentile/100,
         xref='x',
@@ -237,14 +261,6 @@ def get_income_dist_fig(df, salary, dma, age_range, gender):
         # ay=-30,
         )
 
-
-        # ax=20,
-        # ay=-30,
-        # bordercolor="#c7c7c7",
-        # borderwidth=2,
-        # borderpad=4,
-        # bgcolor="#ff7f0e",
-        # opacity=0.8
     gender_clause = '' if gender == 'Neither' else f" {gender.lower()}"
     title = (
         f"Total income distribution among full-time{gender_clause} workers, "
@@ -274,7 +290,8 @@ def get_income_dist_fig(df, salary, dma, age_range, gender):
         xanchor='right', yanchor='auto', xshift=0, yshift=0,
     )
 
-    return fig
+    to_return = fig, percentile if return_pctile else fig
+    return to_return
 
 """
 #  Callbacks
@@ -287,7 +304,10 @@ def set_age_buckets(age_input):
     return [age_input - 2, age_input + 2]
 
 @app.callback(
-    Output(component_id='income-dist-graph', component_property='figure'),
+    [
+        Output(component_id='income-dist-graph', component_property='figure'),
+        Output(component_id='income-charts-header', component_property='children')
+    ],
     [
         Input(component_id='dma', component_property='value'),
         Input('annual_income', 'value'),
@@ -296,11 +316,25 @@ def set_age_buckets(age_input):
     ],
 )
 def update_income_dist_figure(dma, salary, age_range, gender):
-    fig = get_income_dist_fig(
+    fig, percentile = get_income_dist_fig(
         df=working_pop,
         dma=dma,
         salary=salary,
         age_range=age_range,
-        gender=gender
+        gender=gender,
+        return_pctile=True
         )
-    return fig
+    percentile_label = f"Within your cohort you fall into the {get_percentile_label(percentile)} percentile"
+    return fig, percentile_label
+
+# @app.callback(
+#     Output('charts-header', 'children'),
+#     [
+#         Input(component_id='dma', component_property='value'),
+#         Input('annual_income', 'value'),
+#         Input('age_range', 'value'),
+#         Input('gender', 'value'),
+#     ],
+#     )
+# def set_age_buckets(age_input):
+#     return [age_input - 2, age_input + 2]
