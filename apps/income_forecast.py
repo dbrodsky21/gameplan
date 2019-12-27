@@ -272,7 +272,7 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
         f"living in: <br>{dma} <br>"
     )
     layout = go.Layout(
-        title=title,
+        title=go.layout.Title(text=title, xanchor='center', x=0.5),
         yaxis={
             "title": "% of Full-Time Workers Earning Up To $X Per Year",
             "range": [0, 1],
@@ -351,7 +351,7 @@ def get_income_trajectory_fig(df, salary, dma, age_range, gender, age):
     data = [
         go.Scatter(
             x=[
-                round((dt-bday).days/365)
+                round((dt-bday).days/365) # creating an age index
                 for dt in v['sal_traj'].paycheck_df.index
                ],
             y=v['sal_traj'].paycheck_df.salary,
@@ -361,40 +361,21 @@ def get_income_trajectory_fig(df, salary, dma, age_range, gender, age):
         for scn, v in growth_scenarios.items()
     ]
 
-    # bday = pd.datetime.today() - pd.DateOffset(years=age)
-    # date_range = growth_scenarios['Status Quo']['sal_traj'].date_range
-    # age_index = [round((dt-bday).days/365) for dt in date_range]
-    # data.append(
-    #     go.Scatter(
-    #         x=age_index,
-    #         y=[0]*len(age_index),
-    #         xaxis='x2',
-    #         visible='legendonly',
-    #         showlegend=False
-    #     )
-    # )
-
     layout = go.Layout(
-        xaxis=go.layout.XAxis(
-            title = 'Age',
-            dtick=5,
-            # title_standoff=10,
-            # range=[min(date_range) - pd.DateOffset(years=1),
-            #        max(date_range) + pd.DateOffset(years=1)]
+        title=go.layout.Title(
+            text='Income Growth Scenarios (inflation adjusted)',
+            xanchor='center',
+            x=0.5
         ),
-        # xaxis2=go.layout.XAxis(
-        #     title='Age',
-        #     overlaying='x',
-        #     side='top',
-        #     tickvals=[x for x in age_index if x%5 == 0 ],
-        #     range=[min(age_index) - 1, max(age_index) + 1]
-        # ),
+        xaxis=go.layout.XAxis(
+            title='Age',
+            dtick=5,
+        ),
         yaxis=go.layout.YAxis(
             title='Pre-Tax Income in 2019 Dollars (inflation-adjusted)'
         ),
         legend=go.layout.Legend(orientation='h', y=-0.2),
     )
-
 
     return go.Figure(data, layout)
 
