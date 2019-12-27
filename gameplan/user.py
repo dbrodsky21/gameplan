@@ -20,7 +20,7 @@ class User():
 
     @property
     def age(self) -> pd.datetime:
-        return pd.datetime.today() - self.age
+        return pd.datetime.today() - self.birthday
 
     @property
     def income_percentile(self) -> int:
