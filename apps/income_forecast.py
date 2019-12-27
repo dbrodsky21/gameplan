@@ -6,9 +6,15 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objects as go
+
+import numpy as np
+import pandas as pd
 import scipy.stats as sp
 
 from gameplan.growth.income_percentile_estimate import get_working_population_data
+from gameplan.growth.growth_models import KitcesIncomeGrowthModel
+from gameplan.user import User
+from gameplan.income_streams import Salary
 
 from app import app
 
@@ -149,7 +155,7 @@ INCOME_PLOTS = [
                                             dcc.Loading(
                                                 id="loading-wordcloud",
                                                 children=[
-                                                    dcc.Graph(id="bank-wordcloud")
+                                                    dcc.Graph(id="income-forecast-graph")
                                                 ],
                                                 type="default",
                                             )
@@ -220,7 +226,6 @@ def get_cdf(df):
 def get_income_percentile(salary, inc_dist):
     pass
 
-
 def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
     subset = get_cohort_subset(df, dma, age_range, gender)
     dist = get_cdf(subset)
@@ -233,7 +238,6 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
         range_x=(0, 250000),
         range_y=(0,1)
         )
-
     fig.add_scatter(
         x=[salary, salary],
         y=[0, 1],
@@ -293,6 +297,36 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
     to_return = fig, percentile if return_pctile else fig
     return to_return
 
+def get_pctile_for_growth(x):
+    "Current growth model only has 0, 10 ... 90th percentiles"
+    if x == 100:
+        x -= 1
+    return np.floor(x/10)*10
+
+def get_income_forecast_fig(df, salary, dma, age_range, gender, age):
+    subset = get_cohort_subset(df, dma, age_range, gender)
+    dist = get_cdf(subset)
+    percentile = sp.percentileofscore(dist.inctot, int(salary))
+
+    user = User(
+        email='placeholder',
+        birthday=pd.datetime.today() - pd.DateOffset(years=age),
+        income_percentile=get_pctile_for_growth(percentile)
+        )
+
+    sal_grwth_points = user.get_growth_points_to_fit(
+        growth_model=KitcesIncomeGrowthModel,
+        start_dt=pd.datetime.today()
+    )
+    s = Salary(
+        salary,
+        payday_freq='Y',
+        growth_points_to_fit=sal_grwth_points,
+        last_paycheck_dt= pd.datetime.today() + pd.DateOffset(years=65 - age),
+        tax_rate=.35
+    )
+    return px.scatter(s.paycheck_df.salary.reset_index(), 'index', 'salary')
+
 """
 #  Callbacks
 """
@@ -327,14 +361,25 @@ def update_income_dist_figure(dma, salary, age_range, gender):
     percentile_label = f"Within your cohort you fall into the {get_percentile_label(percentile)} percentile"
     return fig, percentile_label
 
-# @app.callback(
-#     Output('charts-header', 'children'),
-#     [
-#         Input(component_id='dma', component_property='value'),
-#         Input('annual_income', 'value'),
-#         Input('age_range', 'value'),
-#         Input('gender', 'value'),
-#     ],
-#     )
-# def set_age_buckets(age_input):
-#     return [age_input - 2, age_input + 2]
+
+@app.callback(
+    Output(component_id='income-forecast-graph', component_property='figure'),
+    [
+        Input(component_id='dma', component_property='value'),
+        Input('annual_income', 'value'),
+        Input('age_range', 'value'),
+        Input('gender', 'value'),
+        Input('age_input', 'value'),
+
+    ],
+)
+def update_income_forecast_figure(dma, salary, age_range, gender, age):
+    fig = get_income_forecast_fig(
+        df=working_pop,
+        dma=dma,
+        salary=salary,
+        age_range=age_range,
+        gender=gender,
+        age=age
+        )
+    return fig
