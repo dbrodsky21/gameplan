@@ -150,7 +150,7 @@ INCOME_PLOTS = [
                                         ],
                                     ),
                                     dcc.Tab(
-                                        label="Income trajectory",
+                                        label="Income Trajectory",
                                         children=[
                                             dcc.Loading(
                                                 id="loading-wordcloud",
