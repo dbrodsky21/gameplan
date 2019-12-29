@@ -3,28 +3,39 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 from datetime import datetime as dt
+import numpy as np
 import pandas as pd
 
-# - Email
-# - Birthday
-#
-# - salary
-#     * Geo
-#     * Current Annual salary
-#     * Age
-#     * Age Cohort
-#     * Gender
-#     * (or just percentile)
-#     - (next raise)
-# - tax rate
-# - existing 401k
-# - Cash savings (interest rate; adjustable)
-# - 401k contributions (employer match)
-# - (Pre-Tax Expenses)
-# - Rent
-# - Other expenses
+# from gameplan.growth.income_percentile_estimate import get_working_population_data
+# from apps.income_forecast import get_income_dist_fig, get_income_trajectory_fig
+import apps.income_forecast as inc
 
+from dash.dependencies import Input, Output, State
 
+from app import app
+
+"""
+#  Constants
+"""
+working_pop = inc.get_working_population_data()
+DMAS = [
+    'New York-Northern New Jersey-Long Island, NY-NJ-PA',
+    'Los Angeles-Long Beach-Anaheim, CA',
+    'Washington, DC/MD/VA',
+    'Chicago-Naperville-Joliet, IL-IN-WI',
+    'Boston-Cambridge-Newton, MA-NH',
+    'Dallas-Fort Worth-Arlington, TX',
+    'Philadelphia-Camden-Wilmington, PA/NJ/DE',
+    'None of these'
+]
+
+"""
+#  Layout Components
+"""
+
+"""
+##  Inputs
+"""
 email_input = dbc.Col(
     dbc.FormGroup(
         [
@@ -36,6 +47,7 @@ email_input = dbc.Col(
     )
 )
 
+# TO DO: Consider adding an age cohort bar below this
 dob_input = dbc.Col(
     dbc.FormGroup(
         [
@@ -43,9 +55,9 @@ dob_input = dbc.Col(
             html.Div(
                 dcc.DatePickerSingle(
                     id="dob_input",
-                    date=dt(1985, 1, 1),
                     placeholder="MM/DD/YYYY",
-                    # initial_visible_month=dt(1985, 1, 1),
+                    # date=dt(1985, 1, 1),
+                    initial_visible_month=dt(1985, 1, 1),
                     # with_portal=True,
                     # number_of_months_shown=1,
                     style={'justifyContent':'start'}
@@ -59,20 +71,59 @@ dob_input = dbc.Col(
         ],
     )
 )
+age_cohort_input = dbc.Col(
+    dbc.FormGroup(
+        [
+            dbc.Label("Relevant Age Cohort", html_for="age_cohort_input"),
+            html.Div(
+                dcc.RangeSlider(
+                    id='age_cohort_input',
+                    count=1,
+                    min=22,
+                    max=65,
+                    step=1,
+                    value=[23, 27],
+                    marks={
+                        20: "20",
+                        25: "25",
+                        30: "30",
+                        35: "35",
+                        40: "40",
+                        45: "45",
+                        50: "50",
+                        55: "55",
+                        60: "60",
+                        65: "65",
+                    },
+                    tooltip={'placement': 'bottom'}
+                ),
+                className="dash-bootstrap"
+            ),
+            dbc.FormText(
+                (
+                    f'If you like, adjust the age range of individuals you would ',
+                    f'consider your "peers". This will be used for estimating your ',
+                    f'income percentile within your cohort. Default is your age +/- 2 years.'
+                ),
+                color="secondary",
+            ),
+        ],
+    )
+)
 
 gender_input = dbc.Col(
     dbc.FormGroup(
         [
             dbc.Label("Gender", html_for="gender_input"),
             dbc.RadioItems(
-                id='gender',
+                id='gender_input',
                 options=[
                     {'label': 'Female', 'value': 'Female'},
                     {'label': 'Male', 'value': 'Male'},
                     {'label': 'Neither', 'value': 'Neither'},
                     {'label': 'Prefer not to say', 'value': 'Prefer not to say'}
                 ],
-                # value='All',
+                value='Prefer not to say',
                 inline=True
                 # labelStyle={'display': 'inline-block'}
             ),
@@ -84,24 +135,13 @@ gender_input = dbc.Col(
     )
 )
 
-DMAS = [
-    'New York-Northern New Jersey-Long Island, NY-NJ-PA',
-    'Los Angeles-Long Beach-Anaheim, CA',
-    'Washington, DC/MD/VA',
-    'Chicago-Naperville-Joliet, IL-IN-WI',
-    'Boston-Cambridge-Newton, MA-NH',
-    'Dallas-Fort Worth-Arlington, TX',
-    'Philadelphia-Camden-Wilmington, PA/NJ/DE',
-    'None of the these'
-]
-
 geo_input = dbc.Col(
     dbc.FormGroup(
         [
             dbc.Label("Metro Area (DMA)", html_for="geo_input"),
             html.Div(
                 dcc.Dropdown(
-                    id='dma',
+                    id='geo_input',
                     options=[{'label': dma, 'value': dma} for dma in DMAS],
                     value='New York-Northern New Jersey-Long Island, NY-NJ-PA',
                     # clearable=False,
@@ -117,11 +157,10 @@ geo_input = dbc.Col(
     )
 )
 
-
 salary_input = dbc.Col(
     dbc.FormGroup(
         [
-            dbc.Label("Current Income", html_for="salary_group"),
+            dbc.Label("Current Total Pre-Tax Income", html_for="salary_group"),
             dbc.InputGroup(
                 [
                     dbc.InputGroupAddon("$", addon_type="prepend"),
@@ -129,6 +168,9 @@ salary_input = dbc.Col(
                         id="salary_input",
                         placeholder="Pre-tax income",
                         type="number",
+                        value=0,
+                        min=0,
+                        step=1000,
                     ),
                 ],
                 id='salary_group',
@@ -154,6 +196,8 @@ cash_savings_input = dbc.Col(
                         # placeholder="Enter your existing cash savings",
                         type="number",
                         value=0,
+                        min=0,
+                        step=1000,
                     ),
                 ],
                 id='cash_savings_group',
@@ -180,6 +224,8 @@ non_401k_investments_input = dbc.Col(
                         # placeholder="Enter your existing cash savings",
                         type="number",
                         value=0,
+                        min=0,
+                        step=1000,
                     ),
                 ],
                 id='non_401k_investments_group',
@@ -193,7 +239,6 @@ non_401k_investments_input = dbc.Col(
     )
 )
 
-## Probably want non-401k investments right?
 existing_401k_input = dbc.Col(
     dbc.FormGroup(
         [
@@ -205,7 +250,9 @@ existing_401k_input = dbc.Col(
                         id="existing_401k_input",
                         # placeholder="Approximate value of your ",
                         type="number",
-                        value=0
+                        value=0,
+                        min=0,
+                        step=1000,
                     ),
                 ],
                 id='existing_401k_group',
@@ -218,6 +265,7 @@ existing_401k_input = dbc.Col(
         ],
     )
 )
+
 ongoing_401k_contribution_input = dbc.Col(
     dbc.FormGroup(
         [
@@ -244,6 +292,7 @@ ongoing_401k_contribution_input = dbc.Col(
         ],
     )
 )
+
 employer_401k_contribution_pct_input = dbc.Col(
     dbc.FormGroup(
         [
@@ -270,6 +319,7 @@ employer_401k_contribution_pct_input = dbc.Col(
         ],
     )
 )
+
 employer_401k_contribution_rate_input = dbc.Col(
     dbc.FormGroup(
         [
@@ -311,7 +361,9 @@ housing_expense_input = dbc.Col(
                         id="housing_expense_input",
                         # placeholder="Approximate value of your ",
                         type="number",
-                        value=0
+                        value=0,
+                        min=0,
+                        step=100,
                     ),
                     dbc.InputGroupAddon("per month", addon_type="append"),
                 ],
@@ -337,7 +389,9 @@ non_housing_expense_input = dbc.Col(
                         id="non_housing_expense_input",
                         # placeholder="Approximate value of your ",
                         type="number",
-                        value=0
+                        value=0,
+                        min=0,
+                        step=100,
                     ),
                     dbc.InputGroupAddon("per month", addon_type="append"),
                 ],
@@ -354,17 +408,31 @@ non_housing_expense_input = dbc.Col(
     )
 )
 
+
+"""
+##  Graphs
+"""
+income_dist_graph = dcc.Loading(
+    id="loading-income-dist",
+    children=[dcc.Graph(id="forms-income-dist-graph")],
+    type="default",
+)
+
+"""
+##  Overall Layout
+"""
 layout = dbc.Container(
     [
         html.H1("Input Form"),
         html.H2("Subheader"),
         html.H3("H3"),
-        dbc.Card(
+        dbc.Card(id='personal_info_card', children=
             [
                 dbc.CardHeader('Personal Info'),
                 dbc.CardBody(
                     [
                         dbc.Row([email_input, dob_input]),
+                        dbc.Row(age_cohort_input),
                         dbc.Row(geo_input),
                         dbc.Row(gender_input),
                     ]
@@ -373,20 +441,20 @@ layout = dbc.Container(
             , color="light"
             , style={'marginBottom': 20}
         ),
-        dbc.Card(
+        dbc.Card(id='salary_info_card', children=
             [
                 dbc.CardHeader('Salary Info'),
                 dbc.CardBody(
                     [
                         dbc.Row(salary_input),
-                        dcc.Graph()
+                        income_dist_graph
                     ]
                 )
             ]
             , color="light"
             , style={'marginBottom': 20}
         ),
-        dbc.Card(
+        dbc.Card(id='saving_and_investments_card', children=
             [
                 dbc.CardHeader('Savings & Investments'),
                 dbc.CardBody(
@@ -400,7 +468,7 @@ layout = dbc.Container(
             , color="light"
             , style={'marginBottom': 20}
         ),
-        dbc.Card(
+        dbc.Card(id='expenses_card', children=
             [
                 dbc.CardHeader('Expenses'),
                 dbc.CardBody(
@@ -412,5 +480,94 @@ layout = dbc.Container(
             , color="light"
             , style={'marginBottom': 20}
         ),
+
+        # Hidden div inside the app that stores the intermediate value
+        html.Div(id='cohort-df', style={'display': 'none'})
     ]
 )
+
+"""
+#  Callbacks
+"""
+@app.callback(
+    Output('age_cohort_input', 'value'),
+    [Input('dob_input', 'date')]
+    )
+def set_age_buckets(dob):
+    age_days = (pd.datetime.today() - pd.to_datetime(dob)).days
+    age_years =  np.floor(age_days / 365)
+    return [age_years - 2, age_years + 2]
+
+
+@app.callback(
+    Output('cohort-df', 'children'),
+    [
+        Input(component_id='geo_input', component_property='value'),
+        Input('salary_input', 'value'),
+        Input('age_cohort_input', 'value'),
+        Input('gender_input', 'value'),
+    ]
+    )
+def get_cohort_df(dma, salary, age_range, gender):
+     # some expensive clean data step
+     cleaned_df = inc.get_cohort_subset(
+        df=working_pop,
+        dma=dma,
+        age_range=age_range,
+        gender=gender
+        )
+
+     # more generally, this line would be
+     # json.dumps(cleaned_df)
+     return cleaned_df.to_json(date_format='iso', orient='split')
+
+
+@app.callback(
+    Output(component_id='forms-income-dist-graph', component_property='figure'),
+    [
+        Input(component_id='geo_input', component_property='value'),
+        Input('salary_input', 'value'),
+        # Input('age_range', 'value'),
+        Input('gender_input', 'value'),
+    ],
+)
+def update_income_dist_figure(dma, salary, gender):
+    fig, percentile = inc.get_income_dist_fig(
+        df=working_pop,
+        dma=dma,
+        salary=salary,
+        age_range= [27, 31], #age_range,
+        gender=gender,
+        return_pctile=True
+        )
+    # percentile_label = f"Within your cohort you fall into the {inc.get_percentile_label(percentile)} percentile"
+    return fig
+
+
+# 1. Create a user object
+# 2. Get user's income percentile
+# 3. Create a salary object using growth points from user
+# 4. Create a portfolio
+#     - init w/ initial savings (call back)
+#     - init w/ interest rate (assumed)
+# 5. Add salary to portfolio
+# 6. Add 401k (initialized w/ existing 401k)
+# 7. Add 401k contributions
+# 8. Add non-401k investments?
+# 9. Create rent expense
+# 10. Create Misc expense
+
+# from gameplan.user import User
+#
+# subset_df =
+#
+# user = User(
+#     email=callback_email,
+#     birthday=callback_email,
+#     zip_code=geo,
+#     gender=callback_gender,
+#     # percentile=calculated_percentile
+# )
+# inc.get_income_percentile():
+# def get_income_percentile()
+# portfolio =

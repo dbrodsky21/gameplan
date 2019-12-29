@@ -143,7 +143,7 @@ INCOME_PLOTS = [
                                         label="Income Distribution",
                                         children=[
                                             dcc.Loading(
-                                                id="loading-treemap",
+                                                id="loading-income-dist",
                                                 children=[dcc.Graph(id="income-dist-graph")],
                                                 type="default",
                                             )
@@ -153,7 +153,7 @@ INCOME_PLOTS = [
                                         label="Income Trajectory",
                                         children=[
                                             dcc.Loading(
-                                                id="loading-wordcloud",
+                                                id="loading-income-trajectory",
                                                 children=[
                                                     dcc.Graph(id="income-trajectory-graph")
                                                 ],
@@ -202,10 +202,10 @@ def get_percentile_label(x):
     return f"{pctile}{suffix_dict.get(last_digit, 'th')}"
 
 def construct_subset_query(dma, age_range, gender):
-    if gender == 'All':
-        gender_clause = "(sex == 'Male' | sex == 'Female')"
-    else:
+    if gender in ['Male', 'Female']:
         gender_clause = f"sex == '{gender}'"
+    else:
+        gender_clause = "(sex == 'Male' | sex == 'Female')"
     query = f" \
         metarea.str.contains(@dma) \
         & AGE.between(@age_range[0], @age_range[1]) \
@@ -213,7 +213,7 @@ def construct_subset_query(dma, age_range, gender):
         "
     return query
 
-def get_cohort_subset(df, dma, age_range, gender):
+def get_cohort_subset(df, dma, age_range, gender) -> pd.DataFrame:
     query = construct_subset_query(dma, age_range, gender)
     return df.query(query)
 
@@ -265,7 +265,7 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
         # ay=-30,
         )
 
-    gender_clause = '' if gender == 'Neither' else f" {gender.lower()}"
+    gender_clause = f" {gender.lower()}" if gender in ['Male', 'Female']  else ''
     title = (
         f"Total income distribution among full-time{gender_clause} workers, "
         f"aged {age_range[0]} to {age_range[1]}, "
