@@ -7,6 +7,7 @@ certifi==2019.11.28
 chardet==3.0.4
 chart-studio==1.0.0
 Click==7.0
+cycler==0.10.0
 dash==1.7.0
 dash-bootstrap-components==0.8.0
 dash-core-components==1.6.0
@@ -39,10 +40,13 @@ jupyter==1.0.0
 jupyter-client==5.3.4
 jupyter-console==6.0.0
 jupyter-core==4.6.1
+kiwisolver==1.1.0
 lxml==4.4.2
 MarkupSafe==1.1.1
+matplotlib==3.1.2
 mistune==0.8.4
 more-itertools==8.0.2
+mpmath==1.1.0
 nbconvert==5.6.1
 nbformat==4.4.0
 notebook==6.0.2
@@ -51,6 +55,7 @@ pandas==0.25.3
 pandas-datareader==0.8.1
 pandocfilters==1.4.2
 parso==0.5.2
+patsy==0.5.1
 pexpect==4.7.0
 pickleshare==0.7.5
 plotly==4.4.1
@@ -59,6 +64,7 @@ prompt-toolkit==2.0.10
 psycopg2==2.8.4
 ptyprocess==0.6.0
 Pygments==2.5.2
+pyparsing==2.4.6
 pyrsistent==0.15.6
 python-dateutil==2.8.1
 pytz==2019.3
@@ -70,6 +76,8 @@ scipy==1.4.1
 Send2Trash==1.5.0
 six==1.13.0
 sqlparse==0.3.0
+statsmodels==0.10.2
+sympy==1.5
 terminado==0.8.3
 testpath==0.4.4
 tornado==6.0.3
