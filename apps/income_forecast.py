@@ -185,7 +185,13 @@ BODY = dbc.Container(
     className="mt-12",
 )
 
-layout = html.Div(children=[BODY])
+layout = html.Div(children=
+    [
+        BODY,
+        # Hidden div inside the app that stores the intermediate value
+        html.Div(id='subset-df', style={'display': 'none'})
+    ]
+)
 
 """
 # Helper functions
@@ -222,9 +228,6 @@ def get_cdf(df):
     dist = df.sort_values('inctot').loc[:, ['inctot', 'weight']]
     dist['cdf'] = dist.weight.cumsum()
     return dist
-
-def get_income_percentile(salary, inc_dist):
-    pass
 
 def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
     subset = get_cohort_subset(df, dma, age_range, gender)
@@ -298,10 +301,14 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
     return to_return
 
 def get_pctile_for_growth(x):
-    "Current growth model only has 0, 10 ... 90th percentiles"
+    "Current growth model only has 10, 20,... 90th percentiles, not 0 or 100th"
     if x == 100:
-        x -= 1
-    return np.floor(x/10)*10
+        pctile = 90
+    elif x < 10:
+        pctile = 10
+    else:
+        pctile = np.floor(x/10)*10
+    return pctile
 
 def get_salary_trajectory(pctile_for_growth, age, current_salary):
     user = User(
@@ -342,8 +349,8 @@ def get_growth_scenarios(percentile, age, current_salary):
     return growth_scenarios
 
 
-def get_income_trajectory_fig(df, salary, dma, age_range, gender, age):
-    subset = get_cohort_subset(df, dma, age_range, gender)
+def get_income_trajectory_fig(cohort_df, salary, age):
+    subset = cohort_df
     dist = get_cdf(subset)
     percentile = sp.percentileofscore(dist.inctot, int(salary))
     growth_scenarios = get_growth_scenarios(percentile, age, salary)
@@ -390,6 +397,28 @@ def set_age_buckets(age_input):
     return [age_input - 2, age_input + 2]
 
 @app.callback(
+    Output('subset-df', 'children'),
+    [
+        Input(component_id='dma', component_property='value'),
+        Input('annual_income', 'value'),
+        Input('age_range', 'value'),
+        Input('gender', 'value'),
+    ]
+    )
+def get_subset_df(dma, salary, age_range, gender):
+     # some expensive clean data step
+     cleaned_df = get_cohort_subset(
+        df=working_pop,
+        dma=dma,
+        age_range=age_range,
+        gender=gender
+        )
+
+     # more generally, this line would be
+     # json.dumps(cleaned_df)
+     return cleaned_df.to_json(date_format='iso', orient='split')
+
+@app.callback(
     [
         Output(component_id='income-dist-graph', component_property='figure'),
         Output(component_id='income-charts-header', component_property='children')
@@ -417,21 +446,16 @@ def update_income_dist_figure(dma, salary, age_range, gender):
 @app.callback(
     Output(component_id='income-trajectory-graph', component_property='figure'),
     [
-        Input(component_id='dma', component_property='value'),
+        Input(component_id='subset-df', component_property='children'),
         Input('annual_income', 'value'),
-        Input('age_range', 'value'),
-        Input('gender', 'value'),
         Input('age_input', 'value'),
-
     ],
 )
-def update_income_trajectory_figure(dma, salary, age_range, gender, age):
+def update_income_trajectory_figure(cohort_json, salary, age):
+    cohort_df = pd.read_json(cohort_json, orient='split')
     fig = get_income_trajectory_fig(
-        df=working_pop,
-        dma=dma,
+        cohort_df=cohort_df,
         salary=salary,
-        age_range=age_range,
-        gender=gender,
         age=age
         )
     return fig

@@ -412,9 +412,9 @@ non_housing_expense_input = dbc.Col(
 """
 ##  Graphs
 """
-income_dist_graph = dcc.Loading(
-    id="loading-income-dist",
-    children=[dcc.Graph(id="forms-income-dist-graph")],
+income_trajectory_graph = dcc.Loading(
+    id="loading-income-trajectory",
+    children=[dcc.Graph(id="forms-income-trajectory-graph")],
     type="default",
 )
 
@@ -447,7 +447,7 @@ layout = dbc.Container(
                 dbc.CardBody(
                     [
                         dbc.Row(salary_input),
-                        income_dist_graph
+                        income_trajectory_graph
                     ]
                 )
             ]
@@ -523,24 +523,22 @@ def get_cohort_df(dma, salary, age_range, gender):
 
 
 @app.callback(
-    Output(component_id='forms-income-dist-graph', component_property='figure'),
+    Output(component_id='forms-income-trajectory-graph', component_property='figure'),
     [
-        Input(component_id='geo_input', component_property='value'),
+        Input(component_id='cohort-df', component_property='children'),
         Input('salary_input', 'value'),
-        # Input('age_range', 'value'),
-        Input('gender_input', 'value'),
+        Input('dob_input', 'date'),
     ],
 )
-def update_income_dist_figure(dma, salary, gender):
-    fig, percentile = inc.get_income_dist_fig(
-        df=working_pop,
-        dma=dma,
+def update_income_trajectory_figure(cohort_json, salary, dob):
+    cohort_df = pd.read_json(cohort_json, orient='split')
+    age_days = (pd.datetime.today() - pd.to_datetime(dob)).days
+    age_years =  np.floor(age_days / 365)
+    fig = inc.get_income_trajectory_fig(
+        cohort_df=cohort_df,
         salary=salary,
-        age_range= [27, 31], #age_range,
-        gender=gender,
-        return_pctile=True
+        age=age_years,
         )
-    # percentile_label = f"Within your cohort you fall into the {inc.get_percentile_label(percentile)} percentile"
     return fig
 
 
