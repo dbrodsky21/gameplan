@@ -19,7 +19,7 @@ class User():
         self._income_percentile = income_percentile
 
     @property
-    def age(self) -> pd.datetime:
+    def age(self) -> pd.Timedelta:
         return pd.datetime.today() - self.birthday
 
     @property
