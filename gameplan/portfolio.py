@@ -10,10 +10,10 @@ from gameplan.liabilities import Liability
 
 
 class Portfolio():
-    def __init__(self, initial_cash_savings=0, interest_rate=0):
+    def __init__(self, initial_cash_savings=0, annualized_interest_rate=0):
         init_cs = CashSavings(
             initial_balance=initial_cash_savings,
-            annualized_interest_rate=interest_rate
+            annualized_interest_rate=annualized_interest_rate
             )
         self.assets = Assets(objects={'cash_savings': init_cs})
         self.liablities = Collection(collection_type=Liability, objects={})
@@ -41,7 +41,6 @@ class Portfolio():
     def remove_pretax_expense(self):
         # TO DO: do i need this?
         raise NotImplementedError
-
 
     def add_asset(self, asset, label=None, if_exists='error'):
         self.assets.add_object(asset, label, if_exists)
@@ -76,7 +75,6 @@ class Portfolio():
         net = pd.concat([inflows, outflows], axis=1).fillna(0).sum(axis=1)
         return pd.Series(net, name='net_cashflows')
 
-
     def update_cash_savings(self):
         # TO DO: Think through this, I'm overwriting stuff every time I call this which seems wrong
         cs = self.assets.contents['cash_savings']
@@ -87,7 +85,6 @@ class Portfolio():
         total_outflows = outflows.get_total_as_cashflow(freq='D', name='cash_outflows')
         if outflows.contents:
             cs.add_debit(total_outflows, if_exists='overwrite')
-
 
     @property
     def cash_savings(self):
