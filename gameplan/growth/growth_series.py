@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import scipy
+from scipy import optimize
 from typing import Callable, Optional, List, Tuple
 import warnings
 
@@ -179,7 +179,7 @@ class FittedGrowthSeries(GrowthSeries):
     def _fitted_growth_params(self) -> List[float]:
         xs = [n[0] for n in self.points_to_fit]
         ys = [n[1] for n in self.points_to_fit]
-        fitted_params, _ = scipy.optimize.curve_fit(
+        fitted_params, _ = optimize.curve_fit(
             f=self.growth_fn,
             xdata=xs,
             ydata=ys,
