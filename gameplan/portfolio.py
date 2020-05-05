@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import Dict, Optional
 
 from gameplan.assets import Assets, CashSavings
 from gameplan.cashflows import CashFlow
@@ -10,7 +11,10 @@ from gameplan.liabilities import Liability
 
 
 class Portfolio():
-    def __init__(self, initial_cash_savings=0, annualized_interest_rate=0):
+    def __init__(self,
+                 initial_cash_savings: float = 0,
+                 annualized_interest_rate: float = 0.0,
+                 ) -> None:
         init_cs = CashSavings(
             initial_balance=initial_cash_savings,
             annualized_interest_rate=annualized_interest_rate
@@ -20,35 +24,51 @@ class Portfolio():
         self.income_streams = IncomeStreams(income_streams={})
         self.expenses = Expenses(expenses={}) #+ ...
 
-    def add_income_stream(self, income_stream, label=None, if_exists='error'):
+    def add_income_stream(self, income_stream, label=None, if_exists='error') -> None:
         self.income_streams.add_object(income_stream, label, if_exists)
 
-    def add_expense(self, expense, label=None, if_exists='error'):
+    def add_expense(self, expense, label=None, if_exists='error')-> None:
         self.expenses.add_object(expense, label, if_exists)
         self.update_cash_savings() # TO DO: figure out if this crude solution actually works
 
-    def remove_expense(self, label):
+    def remove_expense(self, label) -> None:
         self.expenses.remove_object(label)
         self.update_cash_savings() # TO DO: figure out if this crude solution actually works
 
-    def add_pretax_expense(self, from_income_stream_label, amt, label=None, if_exists='error'):
+    def add_pretax_expense(self,
+                           from_income_stream_label: str,
+                           amt: float,
+                           label: Optional[str] = None,
+                           if_exists: str = 'error'
+                           ) -> None:
         inc = self.income_streams.contents[from_income_stream_label]
-        exp = Expense(expense_type=label, date_range=inc.date_range, amount=amt, recurring=True, pretax=True)
+        exp = Expense(expense_type=label,
+                      date_range=inc.date_range,
+                      amount=amt,
+                      recurring=True,
+                      pretax=True
+                      )
         inc.add_deduction(label=exp.name, amt=exp.amount, if_exists=if_exists)
         self.expenses.add_object(exp, label, if_exists)
         self.update_cash_savings() # TO DO: figure out if this crude solution actually works
 
-    def remove_pretax_expense(self):
+    def remove_pretax_expense(self) -> None:
         # TO DO: do i need this?
         raise NotImplementedError
 
-    def add_asset(self, asset, label=None, if_exists='error'):
+    def add_asset(self, asset, label=None, if_exists='error') -> None:
         self.assets.add_object(asset, label, if_exists)
 
-    def add_liability(self, liability, label=None, if_exists='error'):
+    def add_liability(self, liability, label=None, if_exists='error') -> None:
         self.liabilities.add_object(liability, label, if_exists)
 
-    def add_401k_contribution(self, income_stream_label, contrib_pct, employer_match=None, label='401k', if_exists='error'):
+    def add_401k_contribution(self,
+                              income_stream_label: str,
+                              contrib_pct: float,
+                              employer_match: Optional[Dict[str, float]] = None,
+                              label: str = '401k',
+                              if_exists: str = 'error'
+                              ) -> None:
         """employer_match should be a dict w/ keys == {'upto', 'pct_match'}"""
         #TO DO: does this need a remove method as well?
         inc = self.income_streams.contents[income_stream_label]
@@ -69,13 +89,13 @@ class Portfolio():
         self.update_cash_savings() # TO DO: figure out if this crude solution actually works
 
     @property
-    def net_cashflows(self):
+    def net_cashflows(self) -> pd.Series:
         inflows = self.income_streams.contents['salary'].take_home_salary
         outflows = Expenses(expenses=self.expenses.post_tax).total
         net = pd.concat([inflows, outflows], axis=1).fillna(0).sum(axis=1)
         return pd.Series(net, name='net_cashflows')
 
-    def update_cash_savings(self):
+    def update_cash_savings(self) -> None:
         # TO DO: Think through this, I'm overwriting stuff every time I call this which seems wrong
         cs = self.assets.contents['cash_savings']
         inflows = self.income_streams.contents['salary'].take_home_salary
@@ -87,13 +107,13 @@ class Portfolio():
             cs.add_debit(total_outflows, if_exists='overwrite')
 
     @property
-    def cash_savings(self):
+    def cash_savings(self) -> pd.Series:
         self.update_cash_savings()
         cs = self.assets.contents['cash_savings']
         return cs.value_through_time
 
     @property
-    def all_cashflows(self):
+    def all_cashflows(self) -> CashFlowCollection:
         return CashFlowCollection(
             collection_type=CashFlow,
             objects=[
