@@ -325,7 +325,7 @@ def get_salary_trajectory(pctile_for_growth, age, current_salary):
         current_salary,
         payday_freq='Y',
         growth_points_to_fit=sal_grwth_points,
-        last_paycheck_dt= pd.datetime.today() + pd.DateOffset(years=65 - age),
+        last_paycheck_dt= pd.datetime.today() + pd.DateOffset(years=61 - age),
         tax_rate=.35
     )
     return s
@@ -349,11 +349,8 @@ def get_growth_scenarios(percentile, age, current_salary):
     return growth_scenarios
 
 
-def get_income_trajectory_fig(cohort_df, salary, age):
-    subset = cohort_df
-    dist = get_cdf(subset)
-    percentile = sp.percentileofscore(dist.inctot, int(salary))
-    growth_scenarios = get_growth_scenarios(percentile, age, salary)
+def get_income_trajectory_fig(salary, age, income_percentile):
+    growth_scenarios = get_growth_scenarios(income_percentile, age, salary)
     bday = pd.datetime.today() - pd.DateOffset(years=age)
     data = [
         go.Scatter(
@@ -453,9 +450,11 @@ def update_income_dist_figure(dma, salary, age_range, gender):
 )
 def update_income_trajectory_figure(cohort_json, salary, age):
     cohort_df = pd.read_json(cohort_json, orient='split')
+    dist = get_cdf(cohort_df) # this isn't doing any weighting right?
+    percentile = sp.percentileofscore(dist.inctot, int(salary))
     fig = get_income_trajectory_fig(
-        cohort_df=cohort_df,
         salary=salary,
-        age=age
+        age=age,
+        income_percentile=get_pctile_for_growth(percentile)
         )
     return fig
