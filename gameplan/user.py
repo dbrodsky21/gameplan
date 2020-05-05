@@ -6,21 +6,27 @@ from gameplan.growth.growth_models import KitcesIncomeGrowthModel
 
 class User():
     def __init__(self,
-                 email: str,
+                 email: Optional[str] = None,
                  birthday: Optional[pd.datetime] = None,
                  zip_code: Optional[int] = None,
                  gender: Optional[str] = None,
-                 income_percentile: int = 50
+                 income_percentile: int = 50,
+                 retirement_age = 65,
                  ) -> None:
-        self.email = email.lower()
+        self.email = email.lower() if email else None
         self.birthday = birthday
         self.zip_code = zip_code
         self.gender = gender
         self._income_percentile = income_percentile
+        self.retirement_age = retirement_age
 
     @property
     def age(self) -> pd.Timedelta:
         return pd.datetime.today() - self.birthday
+
+    @property
+    def retirement_dt(self) -> pd.Timedelta:
+        return self.birthday + pd.DateOffset(years=self.retirement_age)
 
     @property
     def income_percentile(self) -> int:
