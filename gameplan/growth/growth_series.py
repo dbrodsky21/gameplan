@@ -17,6 +17,7 @@ class GrowthSeries():
                  freq: Optional[pd.DateOffset] = pd.DateOffset(years=1),
                  min_val: Optional[float] = None,
                  max_val: Optional[float] = None,
+                 growth_per_period_fn: Callable = lambda x: 0,
                  **kwargs
                 ) -> None:
 
@@ -31,6 +32,7 @@ class GrowthSeries():
             self.freq=freq
         self.min_val = min_val
         self.max_val = max_val
+        self.growth_per_period_fn = growth_per_period_fn
 
 
     @property
@@ -57,7 +59,9 @@ class GrowthSeries():
 
     @property
     def growth_per_period(self) -> NotImplementedError:
-        raise NotImplementedError("Must implement in submodule.")
+        warnings.warn("Using default growth series, no growth")
+        vals = [ 1 + self.growth_per_period_fn(x) for x in self.days_from_start]
+        return pd.Series(vals)
 
     @property
     def growth_series(self) -> pd.Series:
@@ -83,9 +87,9 @@ class StochasticGrowth(GrowthSeries):
             end_dt=end_dt,
             freq=freq,
             min_val=min_val,
-            max_val=max_val
+            max_val=max_val,
+            growth_per_period_fn=growth_per_period_fn,
         )
-        growth_per_period_fn=growth_per_period_fn
 
     @property
     def growth_per_period(self) -> pd.Series:

@@ -39,14 +39,16 @@ class Portfolio():
                            from_income_stream_label: str,
                            amt: float,
                            label: Optional[str] = None,
-                           if_exists: str = 'error'
+                           if_exists: str = 'error',
+                           growth_params: Optional[Dict[str, object]] = {},
                            ) -> None:
         inc = self.income_streams.contents[from_income_stream_label]
         exp = Expense(expense_type=label,
                       date_range=inc.date_range,
                       amount=amt,
                       recurring=True,
-                      pretax=True
+                      pretax=True,
+                      **growth_params
                       )
         inc.add_deduction(label=exp.name, amt=exp.amount, if_exists=if_exists)
         self.expenses.add_object(exp, label, if_exists)
