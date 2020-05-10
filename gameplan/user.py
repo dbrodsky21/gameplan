@@ -11,7 +11,8 @@ class User():
                  zip_code: Optional[int] = None,
                  gender: Optional[str] = None,
                  income_percentile: int = 50,
-                 retirement_age = 65,
+                 retirement_age: int = 65,
+                 death_age: int = 85,
                  ) -> None:
         self.email = email.lower() if email else None
         self.birthday = birthday
@@ -19,6 +20,7 @@ class User():
         self.gender = gender
         self._income_percentile = income_percentile
         self.retirement_age = retirement_age
+        self.death_age = death_age
 
     @property
     def age(self) -> pd.Timedelta:
@@ -27,6 +29,10 @@ class User():
     @property
     def retirement_dt(self) -> pd.Timedelta:
         return self.birthday + pd.DateOffset(years=self.retirement_age)
+
+    @property
+    def death_dt(self) -> pd.Timedelta:
+        return self.birthday + pd.DateOffset(years=self.death_age)
 
     @property
     def income_percentile(self) -> int:
