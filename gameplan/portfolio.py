@@ -51,7 +51,7 @@ class Portfolio():
                       **growth_params
                       )
         inc.add_deduction(label=exp.name, amt=exp.amount, if_exists=if_exists)
-        self.expenses.add_object(exp, label, if_exists)
+        # self.expenses.add_object(exp, label, if_exists)
         self.update_cash_savings() # TO DO: figure out if this crude solution actually works
 
     def remove_pretax_expense(self) -> None:
