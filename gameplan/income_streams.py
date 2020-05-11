@@ -96,8 +96,6 @@ class Salary(IncomeStream):
             totals_col_label='total_deductions'
             )
 
-
-
     def _create_deduction(self, label, amt=None, pct=None):
         """
         Note that there's a time component here as well, where amt/pct should
@@ -106,15 +104,22 @@ class Salary(IncomeStream):
         if all([amt, pct]) or not any([amt, pct]):
             # Note that (pct or amt == 0 will read as a False)
             raise ValueError("Exactly one of [amt, pct] must not be None")
-        contrib_amt = amt if amt else self.amount * pct
-        deduction = Deduction(
-            deduction_label=label,
-            date_range=self.date_range,
-            values=[contrib_amt] * len(self.date_range),
-        )
+        if amt:
+            deduction = Deduction(
+                deduction_label=label,
+                date_range=self.date_range,
+                values=[amt] * len(self.date_range),
+            )
+        elif pct:
+            deduction = Deduction.from_income_stream(
+                income_stream=self,
+                pct=pct,
+                label=label
+                )
+        else:
+            pass
 
         return deduction
-
 
     def add_deduction(self, deduction=None, label=None, amt=None, pct=None,
                       if_exists='error'):
@@ -126,43 +131,44 @@ class Salary(IncomeStream):
         self.deductions.add_object(deduction, label, if_exists)
 
     @property
+    def salary_df(self):
+        return super().cash_flows_df
+
+    @property
     def total_deductions(self):
         vals = (self.deductions.total if not pd.Series(self.deductions.total).empty
-                else self.cash_flows_df['salary'] * 0.0) # create a 0-filled series if no deductions
+                else self.salary_df['salary'] * 0.0) # create a 0-filled series if no deductions
         return pd.Series(vals, name='total_deductions')
-
 
     @property
     def post_deductions(self):
         # deductions are a negative value
-        post_deductions = self.cash_flows_df['salary'] + self.total_deductions
+        post_deductions = self.salary_df['salary'] + self.total_deductions
         return pd.Series(post_deductions, name='salary_post_deductions')
 
     @property
     def total_taxes(self):
-        total_taxes = self.post_deductions * self.tax_rate
+        total_taxes = -1 * self.post_deductions * self.tax_rate
         return pd.Series(total_taxes, name='total_taxes')
-
 
     @property
     def take_home_salary(self):
-        post_taxes = self.post_deductions - self.total_taxes
+        post_taxes = self.post_deductions + self.total_taxes
         return pd.Series(post_taxes, name='take_home_salary')
 
     @property
-    def paycheck_df(self):
+    def cash_flows_df(self):
         df = pd.concat([
-                self.cash_flows_df['salary'],
-                self.total_deductions,
-                -self.total_taxes, # taxes should be a negative cashflow
-                self.take_home_salary
+                self.salary_df['salary'],
+                self.deductions.as_df.drop(columns=['total_deductions']),
+                self.total_taxes, # taxes should be a negative cashflow
             ], axis=1)
         return df
 
     @property
     def annualized_salary(self):
         """TO DO: refactor"""
-        return self.cash_flows_df.resample('365D').sum().values[0][0]
+        return self.salary_df.resample('365D').sum().values[0][0]
 
 
 class IncomeStreams(CashFlowCollection):
