@@ -96,7 +96,8 @@ class Salary(IncomeStream):
             totals_col_label='total_deductions'
             )
 
-    def _create_deduction(self, label, amt=None, pct=None):
+    def _create_deduction(self, label, amt=None, pct=None, max_amt=None,
+                          max_amt_freq=None):
         """
         Note that there's a time component here as well, where amt/pct should
         maybe be a timeseries.
@@ -114,7 +115,9 @@ class Salary(IncomeStream):
             deduction = Deduction.from_income_stream(
                 income_stream=self,
                 pct=pct,
-                label=label
+                label=label,
+                max_amt=max_amt,
+                max_amt_freq=max_amt_freq,
                 )
         else:
             pass
@@ -122,10 +125,11 @@ class Salary(IncomeStream):
         return deduction
 
     def add_deduction(self, deduction=None, label=None, amt=None, pct=None,
-                      if_exists='error'):
+                      max_amt=None, max_amt_freq=None, if_exists='error'):
 
         if not deduction:
-            deduction = self._create_deduction(label, amt, pct)
+            deduction = self._create_deduction(label, amt, pct, max_amt,
+                                               max_amt_freq)
 
         label = label if label else deduction.name
         self.deductions.add_object(deduction, label, if_exists)

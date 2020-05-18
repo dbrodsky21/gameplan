@@ -74,9 +74,15 @@ class Portfolio():
         """employer_match should be a dict w/ keys == {'upto', 'pct_match'}"""
         #TO DO: does this need a remove method as well?
         inc = self.income_streams.contents[income_stream_label]
-        inc.add_deduction(label=label, pct=contrib_pct, if_exists=if_exists)
-        employee_contrib = Contribution.from_income_stream(inc, pct=contrib_pct,
-                                                           label=f'401k_employee_contribs_{contrib_pct:.1%}')
+        inc.add_deduction(label=label, pct=contrib_pct, if_exists=if_exists,
+                          max_amt=19500, max_amt_freq='Y')
+        employee_contrib = Contribution.from_income_stream(
+            income_stream=inc,
+            pct=contrib_pct,
+            label=f'401k_employee_contribs_{contrib_pct:.1%}',
+            max_amt=19500,
+            max_amt_freq='Y'
+        )
         # To Do: What happens if no 401k exists yet
         self.assets.contents['401k'].add_contribution(employee_contrib, if_exists=if_exists)
 
