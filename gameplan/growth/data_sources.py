@@ -24,9 +24,10 @@ class USDAData():
             * Original - https://fns-prod.azureedge.net/sites/default/files/crc2015_March2017.pdf
             * Gsheets - https://docs.google.com/spreadsheets/d/1pXaXiWU93WuAM93rrYMzewR_cWWGno0cJYPLakz_bYA/edit?usp=sharing
         """
-        self.cleaned_data = self._get_USDA_growth_curves()
+        self.cleaned_data = self._clean_data()
+        self.growth_curves = self._get_growth_curves()
 
-    def _get_USDA_growth_curves(self):
+    def _clean_data(self):
         CSV = 'USDA Expenditures on Children by Families, 2015 - Assembled.csv'
         raw = pd.read_csv(INPUT_DIR + CSV)
 
@@ -46,9 +47,14 @@ class USDAData():
             .stack()
             .unstack([1, 2, 3]) # columns now an heirarchical index ['geo', 'inc', 'expense_type']
         )
-        grouped.loc[0] = grouped.loc[df.end_age_days.min()] # fill in expenses at day 0
+        grouped.loc[0] = grouped.loc[raw.end_age_days.min()] # fill in expenses at day 0
         grouped.sort_index(inplace=True)
+
+        return grouped
+
+    def _get_growth_curves(self):
+        df = self.cleaned_data
         # Normalize to % growth rather than absolute levels
-        growth_curves = grouped.divide(grouped.loc[0])
+        growth_curves = df.divide(df.loc[0])
 
         return growth_curves
