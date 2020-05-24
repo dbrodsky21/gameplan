@@ -1,4 +1,4 @@
-table,geo,family_status,income_group,age_group,start_age,end_age,total_exp,housing_exp,food_exp,transportation_exp,clothing_exp,health_care_exp,child_care_and_education_exp,miscellaneous
+table,geo,family_status,income_group,age_group,start_age,end_age,total_exp,housing_exp,food_exp,transportation_exp,clothing_exp,health_care_exp,child_care_and_education_exp,miscellaneous_exp
 Table 1,Overall United States,Married,"< $59,200",0 - 2,0,2,9690,3160,1310,1200,670,820,2080,450
 Table 1,Overall United States,Married,"< $59,200",3 - 5,3,5,9700,3160,1350,1250,540,760,2080,560
 Table 1,Overall United States,Married,"< $59,200",6 - 8,6,8,9330,3160,1930,1310,540,790,920,680
