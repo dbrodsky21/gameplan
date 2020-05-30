@@ -228,6 +228,14 @@ child_expenditures_graph = dcc.Loading(
     style={'display': 'none'},
 )
 
+relative_child_expenditures_graph = dcc.Loading(
+    id="loading-relative-child-expenditures",
+    children=[dcc.Graph(id="forms-relative-child-expenditures-graph",
+                        style={'display': 'none'})],
+    type="default",
+    style={'display': 'none'},
+)
+
 """
 ##  Overall Layout
 """
@@ -250,6 +258,7 @@ layout = dbc.Container(
                         dbc.Row(yrs_btwn_children_input),
                         children_in_household_graph,
                         child_expenditures_graph,
+                        relative_child_expenditures_graph,
                     ]
                 )
             ]
@@ -403,14 +412,22 @@ def get_expenditures_fig(expenditures):
 
     total_exp = to_plt[to_plt['Expense Category'] == 'Total']
 
-    fig = px.area(to_plt[to_plt['Expense Category'] != 'Total'], x='Date', y='value', color='Expense Category')
-    fig.add_scatter(x=total_exp['Date'], y=total_exp['value'], name='Total',mode='lines+markers',
-                    line_color="rgb(29, 105, 150)")
-    fig.update_yaxes(title='Child Expenditure Per Year', tickformat="$,.0", )
-    fig.update_xaxes(title='')
-    fig.update_layout(legend={'orientation':'h'})
+    fig_abs = px.area(to_plt[to_plt['Expense Category'] != 'Total'], x='Date',
+                      y='value', color='Expense Category')
+    fig_abs.add_scatter(x=total_exp['Date'], y=total_exp['value'], name='Total',
+                        mode='lines+markers', line_color="rgb(29, 105, 150)")
+    fig_abs.update_yaxes(title='Child Expenditure Per Year', tickformat="$,.0", )
+    fig_abs.update_xaxes(title='')
+    fig_abs.update_layout(legend={'orientation':'h'})
 
-    return fig
+    fig_rel = px.area(to_plt[to_plt['Expense Category'] != 'Total'], x='Date',
+                      y='value', color='Expense Category', groupnorm='fraction')
+    fig_rel.update_yaxes(title='Proportion of Child Expenditures',
+                         tickformat="%", range=[0, 1])
+    fig_rel.update_xaxes(title='')
+    fig_rel.update_layout(legend={'orientation':'h'})
+
+    return fig_abs, fig_rel
 
 """
 #  Callbacks
@@ -423,6 +440,9 @@ def get_expenditures_fig(expenditures):
         Output(component_id='forms-child-expenditures-graph', component_property='figure'),
         Output(component_id='forms-child-expenditures-graph', component_property='style'),
         Output(component_id='loading-child-expenditures', component_property='style'),
+        Output(component_id='forms-relative-child-expenditures-graph', component_property='figure'),
+        Output(component_id='forms-relative-child-expenditures-graph', component_property='style'),
+        Output(component_id='loading-relative-child-expenditures', component_property='style'),
     ],
     [
         Input('existing_children_ages_input', 'value'),
@@ -467,16 +487,18 @@ def update_children_in_household(kids_age_str: str,
         total_expenditures = total_expenditures.multiply(n_kids_multiplier, axis=0)
         # print(total_expenditures.head())
 
-        exp_fig = get_expenditures_fig(total_expenditures)
-        exp_fig_title = f"Child Expenditures - Married Couple in {geo} w/ Income {income_group} and {len(bdays)} Children"
-        exp_fig.update_layout(title=exp_fig_title)
+        exp_fig, rel_exp_fig = get_expenditures_fig(total_expenditures)
+        for_title = f"Married Couple in {geo} w/ Income {income_group} and {len(bdays)} Children"
+        exp_fig.update_layout(title="Child Expenditures - " + for_title)
+        rel_exp_fig.update_layout(title="Child Expenses Breakdown - " + for_title)
+
     else:
         exp_fig = go.Figure()
+        rel_exp_fig = go.Figure()
 
     display = {'display': 'block'} if len(bdays) > 0 else {'display': 'none'}
 
-    return n_kids_fig, display, display, exp_fig, display, display
-
+    return n_kids_fig, display, display, exp_fig, display, display, rel_exp_fig, display, display
 
 @app.callback(
     [
