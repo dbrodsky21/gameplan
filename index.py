@@ -3,7 +3,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 
 from app import app, server
-from apps import salary_calculator, income_forecast, forms
+from apps import child_expenditures, salary_calculator, income_forecast, forms
 
 
 app.layout = html.Div([
@@ -21,6 +21,8 @@ def display_page(pathname):
         return income_forecast.layout
     if pathname == '/apps/forms':
         return forms.layout
+    if pathname == '/apps/child_expenditures':
+        return child_expenditures.layout
     else:
         return '404'
 
