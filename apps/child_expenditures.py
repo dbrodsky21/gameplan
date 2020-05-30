@@ -3,7 +3,6 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 from datetime import datetime as dt
-import cufflinks as cf
 from functools import reduce
 import numpy as np
 import pandas as pd
