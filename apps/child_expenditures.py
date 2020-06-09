@@ -1,4 +1,4 @@
-import dash_core_components as dcc
+income_groupimport dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 
@@ -41,13 +41,13 @@ INCOME_GROUPS = [
 """
 ##  Inputs
 """
-geo_input = dbc.Col(
+region_input = dbc.Col(
     dbc.FormGroup(
         [
-            dbc.Label("In which region do you live?", html_for="geo_input"),
+            dbc.Label("In which region do you live?", html_for="region_input"),
             html.Div(
                 dcc.Dropdown(
-                    id='geo_input',
+                    id='region_input',
                     options=[{'label': region, 'value': region} for region in REGIONS],
                     value='Urban Northeast',
                 ),
@@ -61,13 +61,13 @@ geo_input = dbc.Col(
     )
 )
 
-salary_input = dbc.Col(
+income_group_input = dbc.Col(
     dbc.FormGroup(
         [
-            dbc.Label("What is your current household income?", html_for="salary_group"),
+            dbc.Label("What is your current household income?", html_for="income_group"),
             html.Div(
                 dcc.Dropdown(
-                    id='salary_input',
+                    id='income_group_input',
                     options=[{'label': grp, 'value': grp} for grp in INCOME_GROUPS],
                     value=INCOME_GROUPS[0],
                 ),
@@ -249,8 +249,8 @@ layout = dbc.Container(
                 dbc.CardHeader('Personal Info'),
                 dbc.CardBody(
                     [
-                        dbc.Row(geo_input),
-                        dbc.Row(salary_input),
+                        dbc.Row(region_input),
+                        dbc.Row(income_group_input),
                         dbc.Row(n_existing_children_input),
                         dbc.Row(existing_children_ages_input),
                         dbc.Row(n_future_children_input),
@@ -406,22 +406,23 @@ def get_expenditures_fig(expenditures):
         .rename(columns={
             'index': 'Date',
             'level_1': 'Expense Category',
-            0: 'value'
+            0: 'Amount'
         })
     )
+    to_plt['Amount'] = to_plt['Amount'].apply(lambda x: round(x, 0))
 
     total_exp = to_plt[to_plt['Expense Category'] == 'Total']
 
     fig_abs = px.area(to_plt[to_plt['Expense Category'] != 'Total'], x='Date',
-                      y='value', color='Expense Category')
-    fig_abs.add_scatter(x=total_exp['Date'], y=total_exp['value'], name='Total',
+                      y='Amount', color='Expense Category')
+    fig_abs.add_scatter(x=total_exp['Date'], y=total_exp['Amount'], name='Total',
                         mode='lines+markers', line_color="rgb(29, 105, 150)")
     fig_abs.update_yaxes(title='Child Expenditure Per Year', tickformat="$,.0", )
     fig_abs.update_xaxes(title='')
     fig_abs.update_layout(legend={'orientation':'h'})
 
     fig_rel = px.area(to_plt[to_plt['Expense Category'] != 'Total'], x='Date',
-                      y='value', color='Expense Category', groupnorm='fraction')
+                      y='Amount', color='Expense Category', groupnorm='fraction')
     fig_rel.update_yaxes(title='Proportion of Child Expenditures',
                          tickformat="%", range=[0, 1])
     fig_rel.update_xaxes(title='')
@@ -450,8 +451,8 @@ def get_expenditures_fig(expenditures):
         Input('next_child_min_years_input', 'value'),
         Input('next_child_max_years_input', 'value'),
         Input('yrs_btwn_children_input', 'value'),
-        Input('geo_input', 'value'),
-        Input('salary_input', 'value'),
+        Input('region_input', 'value'),
+        Input('income_group_input', 'value'),
     ],
 )
 def update_children_in_household(kids_age_str: str,
