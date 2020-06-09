@@ -258,7 +258,7 @@ layout = dbc.Container(
                         dbc.Row(yrs_btwn_children_input),
                         children_in_household_graph,
                         child_expenditures_graph,
-                        relative_child_expenditures_graph,
+                        # relative_child_expenditures_graph,
                     ]
                 )
             ]
