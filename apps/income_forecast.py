@@ -356,9 +356,9 @@ def get_income_trajectory_fig(salary, age, income_percentile):
         go.Scatter(
             x=[
                 round((dt-bday).days/365) # creating an age index
-                for dt in v['sal_traj'].paycheck_df.index
+                for dt in v['sal_traj'].salary_df.index
                ],
-            y=v['sal_traj'].paycheck_df.salary,
+            y=v['sal_traj'].salary_df['salary'],
             name=f"{scn} Growth Trajectory - {int(v['grwth_pctile'])}th percentile",
             mode='markers+lines'
         )
