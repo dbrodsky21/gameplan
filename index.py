@@ -21,8 +21,8 @@ def display_page(pathname):
         return income_forecast.layout
     if pathname == '/apps/forms':
         return forms.layout
-    # if pathname == '/apps/child-expenditures':
-    #     return child_expenditures.layout
+    if pathname == '/apps/child-expenditures':
+        return child_expenditures.layout
     else:
         return '404'
 

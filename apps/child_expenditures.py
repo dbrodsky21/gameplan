@@ -33,6 +33,7 @@ INCOME_GROUPS = [
     '$59,200 to $107,400',
     '> $107,400',
 ]
+DATA = USDAData()
 
 """
 #  Layout Components
@@ -258,7 +259,7 @@ layout = dbc.Container(
                         dbc.Row(yrs_btwn_children_input),
                         children_in_household_graph,
                         child_expenditures_graph,
-                        # relative_child_expenditures_graph,
+                        relative_child_expenditures_graph,
                     ]
                 )
             ]
@@ -327,8 +328,7 @@ def get_n_kids_in_household(kids_bdays: List[pd.datetime],
     time_series.sort_index(inplace=True)
     return time_series
 
-def get_relevant_data(region, income_group):
-    data = USDAData()
+def get_relevant_data(data, region, income_group):
     relevant_data = data.cleaned_data.get((region, income_group))
     return relevant_data / 365 # convert to daily basis
 
@@ -472,32 +472,33 @@ def update_children_in_household(kids_age_str: str,
         )
 
     n_kids_ts = get_n_kids_in_household(kids_bdays=bdays)
-    n_kids_fig = get_n_kids_fig(n_kids_ts)
+    # n_kids_fig = get_n_kids_fig(n_kids_ts)
+    n_kids_fig = go.Figure()
 
-    if len(bdays) > 0:
-        relevant_data = get_relevant_data(geo, income_group)
-        expenditure_series = [create_expenditure_series(x, relevant_data) for x in bdays]
-        total_expenditures = combine_expenditures(expenditure_series)
-        # print(total_expenditures.head(5))
-        n_kids_multiplier = (
-            n_kids_ts
-            .apply(get_n_kids_multiplier) # Take into account economies of scale w/ multiple kids
-            .reindex(total_expenditures.index)
-            )
-        # print(n_kids_multiplier.head())
-        total_expenditures = total_expenditures.multiply(n_kids_multiplier, axis=0)
-        # print(total_expenditures.head())
+    # if len(bdays) > 0:
+    #     relevant_data = get_relevant_data(DATA, geo, income_group)
+    #     expenditure_series = [create_expenditure_series(x, relevant_data) for x in bdays]
+    #     total_expenditures = combine_expenditures(expenditure_series)
+    #     # print(total_expenditures.head(5))
+    #     n_kids_multiplier = (
+    #         n_kids_ts
+    #         .apply(get_n_kids_multiplier) # Take into account economies of scale w/ multiple kids
+    #         .reindex(total_expenditures.index)
+    #         )
+    #     # print(n_kids_multiplier.head())
+    #     total_expenditures = total_expenditures.multiply(n_kids_multiplier, axis=0)
+    #     # print(total_expenditures.head())
+    #
+    #     exp_fig, rel_exp_fig = get_expenditures_fig(total_expenditures)
+    #     for_title = f"Married Couple in {geo} w/ Income {income_group} and {len(bdays)} Children"
+    #     exp_fig.update_layout(title="Child Expenditures - " + for_title)
+    #     rel_exp_fig.update_layout(title="Child Expenses Breakdown - " + for_title)
+    #
+    # else:
+    exp_fig = go.Figure()
+    rel_exp_fig = go.Figure()
 
-        exp_fig, rel_exp_fig = get_expenditures_fig(total_expenditures)
-        for_title = f"Married Couple in {geo} w/ Income {income_group} and {len(bdays)} Children"
-        exp_fig.update_layout(title="Child Expenditures - " + for_title)
-        rel_exp_fig.update_layout(title="Child Expenses Breakdown - " + for_title)
-
-    else:
-        exp_fig = go.Figure()
-        rel_exp_fig = go.Figure()
-
-    display = {'display': 'block'} if len(bdays) > 0 else {'display': 'none'}
+    display = {'display': 'block'} #if len(bdays) > 0 else {'display': 'none'}
 
     return n_kids_fig, display, display, exp_fig, display, display, rel_exp_fig, display, display
 
