@@ -257,9 +257,32 @@ layout = dbc.Container(
                         dbc.Row(n_future_children_input),
                         dbc.Row(next_child_age_input),
                         dbc.Row(yrs_btwn_children_input),
-                        children_in_household_graph,
-                        child_expenditures_graph,
-                        relative_child_expenditures_graph,
+                        dbc.Card(dbc.CardBody(
+                            dbc.Row(
+                                dbc.Col(
+                                    dcc.Tabs(
+                                        id='tabs',
+                                        children=[
+                                            dcc.Tab(
+                                                label="Children in Household",
+                                                children=children_in_household_graph
+                                                ),
+                                            dcc.Tab(
+                                                label="Total Expenditures",
+                                                children=child_expenditures_graph
+                                                ),
+                                            dcc.Tab(
+                                                label="Expenditure Breakdown",
+                                                children=relative_child_expenditures_graph,
+                                                ),
+                                        ]
+                                    )
+                                )
+                            )
+                        ))
+                        # children_in_household_graph,
+                        # child_expenditures_graph,
+                        # relative_child_expenditures_graph,
                     ]
                 )
             ]
