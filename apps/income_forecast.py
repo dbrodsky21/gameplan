@@ -264,7 +264,7 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
         arrowsize=1,
         arrowwidth=2,
         ax=50,
-        ay=-40
+        ay=40
         # ay=-30,
         )
 
