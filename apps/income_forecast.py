@@ -232,7 +232,9 @@ def get_cdf(df):
 def get_income_dist_fig(df, salary, msa, age_range, gender, return_pctile=True):
     subset = get_cohort_subset(df, msa, age_range, gender)
     dist = get_cdf(subset)
-    percentile = sp.percentileofscore(dist.inctot, int(salary))
+    percentile = dist.loc[dist['inctot'] >= int(salary), 'cdf'].iloc[0]
+    percentile = int(round(100 * percentile))
+    # percentile = sp.percentileofscore(dist.inctot, int(salary))
 
     dist.rename(
         columns={
