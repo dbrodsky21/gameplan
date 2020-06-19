@@ -19,7 +19,7 @@ from gameplan.income_streams import Salary
 from app import app
 
 working_pop = get_working_population_data()
-DMAS = [
+MSAS = [
     'New York-Northern New Jersey-Long Island, NY-NJ-PA',
     'Los Angeles-Long Beach-Anaheim, CA',
     'Washington, DC/MD/VA',
@@ -60,10 +60,10 @@ LEFT_COLUMN = dbc.Jumbotron(
     [
         html.H4(children="Define your comparison cohort", className="display-5", style={"font-size": 24, "marginTop": 0}),
         html.Hr(className="my-2"),
-        html.Label("Select your Metro Area (DMA)", style={"marginTop": 10, "font-size": 20}, className="lead"),
+        html.Label("Select your Metro Area", style={"marginTop": 10, "font-size": 20}, className="lead"),
         dcc.Dropdown(
-            id='dma',
-            options=[{'label': dma, 'value': dma} for dma in DMAS],
+            id='msa',
+            options=[{'label': msa, 'value': msa} for msa in MSAS],
             value='New York-Northern New Jersey-Long Island, NY-NJ-PA',
             clearable=False,
             style={"marginBottom": 0, "font-size": 12},
@@ -207,20 +207,20 @@ def get_percentile_label(x):
 
     return f"{pctile}{suffix_dict.get(last_digit, 'th')}"
 
-def construct_subset_query(dma, age_range, gender):
+def construct_subset_query(msa, age_range, gender):
     if gender in ['Male', 'Female']:
         gender_clause = f"sex == '{gender}'"
     else:
         gender_clause = "(sex == 'Male' | sex == 'Female')"
     query = f" \
-        metarea.str.contains(@dma) \
+        metarea.str.contains(@msa) \
         & AGE.between(@age_range[0], @age_range[1]) \
         & {gender_clause} \
         "
     return query
 
-def get_cohort_subset(df, dma, age_range, gender) -> pd.DataFrame:
-    query = construct_subset_query(dma, age_range, gender)
+def get_cohort_subset(df, msa, age_range, gender) -> pd.DataFrame:
+    query = construct_subset_query(msa, age_range, gender)
     return df.query(query)
 
 def get_cdf(df):
@@ -229,15 +229,22 @@ def get_cdf(df):
     dist['cdf'] = dist.weight.cumsum()
     return dist
 
-def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
-    subset = get_cohort_subset(df, dma, age_range, gender)
+def get_income_dist_fig(df, salary, msa, age_range, gender, return_pctile=True):
+    subset = get_cohort_subset(df, msa, age_range, gender)
     dist = get_cdf(subset)
     percentile = sp.percentileofscore(dist.inctot, int(salary))
 
+    dist.rename(
+        columns={
+            'inctot': 'Total Annual Income',
+            'cdf': '% of Cohort Earning <= $X Annually'
+            },
+            inplace=True
+            )
     fig = px.line(
         dist,
-        x='inctot',
-        y='cdf',
+        x='Total Annual Income',
+        y='% of Cohort Earning <= $X Annually',
         range_x=(0, 250000),
         range_y=(0,1)
         )
@@ -272,13 +279,14 @@ def get_income_dist_fig(df, salary, dma, age_range, gender, return_pctile=True):
     title = (
         f"Total income distribution among full-time{gender_clause} workers, "
         f"aged {age_range[0]} to {age_range[1]}, "
-        f"living in: <br>{dma} <br>"
+        f"living in: <br>{msa} <br>"
     )
     layout = go.Layout(
         title=go.layout.Title(text=title, xanchor='center', x=0.5),
         yaxis={
             "title": "% of Full-Time Workers Earning Up To $X Per Year",
             "range": [0, 1],
+            "tickformat": '%'
             },
         xaxis={"title": "Total Annual Income"},
         font=dict(
@@ -348,7 +356,6 @@ def get_growth_scenarios(percentile, age, current_salary):
 
     return growth_scenarios
 
-
 def get_income_trajectory_fig(salary, age, income_percentile):
     growth_scenarios = get_growth_scenarios(income_percentile, age, salary)
     bday = pd.datetime.today() - pd.DateOffset(years=age)
@@ -396,17 +403,17 @@ def set_age_buckets(age_input):
 @app.callback(
     Output('subset-df', 'children'),
     [
-        Input(component_id='dma', component_property='value'),
+        Input(component_id='msa', component_property='value'),
         Input('annual_income', 'value'),
         Input('age_range', 'value'),
         Input('gender', 'value'),
     ]
     )
-def get_subset_df(dma, salary, age_range, gender):
+def get_subset_df(msa, salary, age_range, gender):
      # some expensive clean data step
      cleaned_df = get_cohort_subset(
         df=working_pop,
-        dma=dma,
+        msa=msa,
         age_range=age_range,
         gender=gender
         )
@@ -421,16 +428,16 @@ def get_subset_df(dma, salary, age_range, gender):
         Output(component_id='income-charts-header', component_property='children')
     ],
     [
-        Input(component_id='dma', component_property='value'),
+        Input(component_id='msa', component_property='value'),
         Input('annual_income', 'value'),
         Input('age_range', 'value'),
         Input('gender', 'value'),
     ],
 )
-def update_income_dist_figure(dma, salary, age_range, gender):
+def update_income_dist_figure(msa, salary, age_range, gender):
     fig, percentile = get_income_dist_fig(
         df=working_pop,
-        dma=dma,
+        msa=msa,
         salary=salary,
         age_range=age_range,
         gender=gender,
@@ -438,7 +445,6 @@ def update_income_dist_figure(dma, salary, age_range, gender):
         )
     percentile_label = f"Within your cohort you fall into the {get_percentile_label(percentile)} percentile"
     return fig, percentile_label
-
 
 @app.callback(
     Output(component_id='income-trajectory-graph', component_property='figure'),
